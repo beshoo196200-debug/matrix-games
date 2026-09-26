@@ -88,8 +88,26 @@ body{
     width:100%;height:115px;object-fit:cover;border-radius:12px;
     background:#142414;border:1px solid rgba(0,255,102,.05)
 }
-.game-title{font-size:14px;font-weight:bold;margin-top:12px;color:#e2e8f0;letter-spacing:.5px}
+.game-title{font-size:14px;font-weight:bold;margin-top:10px;color:#e2e8f0;letter-spacing:.5px}
 .game-meta{font-size:11px;color:#779077;margin-top:5px}
+.game-card{position:relative}
+.game-badges{position:absolute;top:16px;right:16px;display:flex;gap:5px;flex-wrap:wrap;z-index:2}
+.game-badge{padding:4px 7px;border-radius:999px;font-size:10px;font-weight:800;background:#061006;color:#00ff66;border:1px solid rgba(0,255,102,.35)}
+.favorite-btn{position:absolute;top:16px;left:16px;z-index:3;width:34px;height:34px;border:0;border-radius:50%;background:rgba(6,12,6,.9);color:#9bb39b;cursor:pointer;font-size:18px;line-height:1}
+.favorite-btn.active{color:#ffd54a}
+.home-sections{max-width:1250px;margin:0 auto 30px}
+.home-section{margin:0 0 28px;text-align:right}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.section-head h3{margin:0;color:#00ff66;font-size:21px}
+.section-head button{background:#142414;color:#d7e8d7;border:1px solid #1b321f;border-radius:10px;padding:8px 12px;cursor:pointer}
+.section-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:18px}
+.category-bar{max-width:1250px;margin:0 auto 22px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.category-chip{border:1px solid #1b321f;background:#060c06;color:#9bb39b;padding:9px 13px;border-radius:999px;cursor:pointer;font-weight:700;font-size:12px}
+.category-chip.active{background:#00ff66;color:#010301;border-color:#00ff66}
+.empty-section{padding:18px;border:1px dashed #1b321f;border-radius:12px;color:#779077;text-align:center}
+.admin-checks{display:flex;gap:18px;justify-content:center;align-items:center;flex-wrap:wrap;margin:8px 0}
+.admin-checks label{color:#a3bfa3;font-size:13px}
+.admin-checks input{accent-color:#00ff66}
 .no-games{grid-column:1/-1;padding:40px;color:#8fa38f}
 
 .modal-overlay{
@@ -190,6 +208,18 @@ iframe{width:100%;height:100%;border:none}
 
     <select id="admin-game-select" class="auth-input"></select>
     <input type="file" id="admin-game-image" class="auth-input" accept="image/*">
+    <select id="admin-game-category" class="auth-input">
+        <option value="">اختيار التصنيف</option>
+        <option value="أكشن">أكشن</option><option value="سباق">سباق</option><option value="رياضة">رياضة</option>
+        <option value="رعب">رعب</option><option value="ألغاز">ألغاز</option><option value="مغامرات">مغامرات</option>
+        <option value="قتال">قتال</option><option value="ألعاب 2 لاعب">ألعاب 2 لاعب</option>
+        <option value="IO">IO</option><option value="أركيد">أركيد</option><option value="أخرى">أخرى</option>
+    </select>
+    <div class="admin-checks">
+        <label><input type="checkbox" id="admin-game-new"> 🆕 لعبة جديدة</label>
+        <label><input type="checkbox" id="admin-game-featured"> ⭐ مميزة</label>
+    </div>
+    <button class="auth-btn" onclick="saveSelectedGameMeta()">حفظ بيانات اللعبة 💾</button>
     <button class="auth-btn" onclick="uploadSelectedGameImage()">رفع / تغيير صورة اللعبة 🖼️</button>
     <button class="auth-btn secondary-btn" onclick="reloadGames()">تحديث قائمة الألعاب 🔄</button>
 
@@ -197,6 +227,9 @@ iframe{width:100%;height:100%;border:none}
 </div>
 
 <div class="main-container">
+    <div class="category-bar" id="category-bar"></div>
+    <div class="home-sections" id="home-sections"></div>
+    <div class="section-head"><h3 id="all-games-title">🎮 كل الألعاب</h3></div>
     <div class="games-grid" id="main-grid"></div>
 </div>
 
@@ -605,6 +638,30 @@ let catalog = [];
 let currentUser = null;
 let currentProfile = null;
 let favoriteGames = new Set();
+let selectedCategory = "الكل";
+const categoryKeywords = {
+    "أكشن":["shooter","shoot","war","zombie","angry","battle","stick","snout","tank","fnaf","granny","superhot","backrooms"],
+    "سباق":["racing","race","car","moto","motorcycle","drift","drive","road","bike","rider","kart","polytrack","slope","x3m","derby"],
+    "رياضة":["soccer","football","basket","basketball","tennis","golf","baseball","boxing","volley","ping-pong","wrestle","table-tennis"],
+    "رعب":["fnaf","granny","backrooms","evil","short-life","house-of-hazards"],
+    "ألغاز":["2048","bloxorz","chess","minesweeper","wordle","riddle","quiz","impossible","cut-the-rope","bubble"],
+    "مغامرات":["adventure","temple","subway","run","escape","prison","dadish","duck-life","fireboy","watergirl","level-devil"],
+    "قتال":["battle","boxing","fighter","war","archer","snipers","knights","karate","wrestle"],
+    "ألعاب 2 لاعب":["1-on-1","2-player","bros","random","rooftop","fireboy","watergirl","ping-pong","tube-jumpers","get-on-top"],
+    "IO":["io","territorial","agar","hole","paper-io","state-io","cleanup-io","snowball-io","ducklings-io"],
+    "أركيد":["flappy","doodle","clicker","jump","helix","crossy","pac-man","tomb-of-the-mask","tap-road","stack","tiny-fishing"]
+};
+function getGameCategory(game){
+    if(game?.category)return game.category;
+    const n=(game?.name||"").toLowerCase();
+    for(const [cat,words] of Object.entries(categoryKeywords))if(words.some(w=>n.includes(w)))return cat;
+    return "أخرى";
+}
+function getLocalPlayCounts(){try{return JSON.parse(localStorage.getItem("matrixGamePlayCounts")||"{}")}catch(e){return {}}}
+function recordLocalPlay(name){const counts=getLocalPlayCounts();counts[name]=(counts[name]||0)+1;try{localStorage.setItem("matrixGamePlayCounts",JSON.stringify(counts))}catch(e){}}
+function getLocalFavorites(){try{return JSON.parse(localStorage.getItem("matrixGameFavorites")||"[]")}catch(e){return []}}
+function saveLocalFavorites(){try{localStorage.setItem("matrixGameFavorites",JSON.stringify([...favoriteGames]))}catch(e){}}
+function sortMostPlayed(list){const counts=getLocalPlayCounts();return [...list].sort((a,b)=>(counts[b.name]||0)-(counts[a.name]||0))}
 
 /* =========================================================
    3) أدوات عامة
@@ -633,36 +690,65 @@ function buildBaseCatalog(){
     }));
 }
 
+function gameCardHtml(game){
+    const title=safeText(prettyName(game.name));
+    const img=safeText(imageUrl(game.name));
+    const cat=safeText(getGameCategory(game));
+    const badges=[];
+    if(game.isNew)badges.push("🆕 جديد");
+    if(game.featured)badges.push("⭐ مميز");
+    if(favoriteGames.has(game.name))badges.push("❤️ مفضلة");
+    return `<div class="game-card" data-game="${encodeURIComponent(game.name)}" onclick="openGame(decodeURIComponent(this.dataset.game))">
+        <div class="game-badges">${badges.map(b=>`<span class="game-badge">${b}</span>`).join("")}</div>
+        <button class="favorite-btn ${favoriteGames.has(game.name)?"active":""}" title="المفضلة" data-game="${encodeURIComponent(game.name)}" onclick="toggleFavorite(this.dataset.game,event)">★</button>
+        <img class="game-thumb" src="${img}" alt="${title}" onerror="this.onerror=null;this.src='https://via.placeholder.com/400x250/060c06/00ff66?text=Matrix+Games'">
+        <div class="game-title">${title}</div><div class="game-meta">🎮 ${cat}</div>
+    </div>`;
+}
 function renderGames(list=catalog){
     const grid=document.getElementById("main-grid");
-    if(!list.length){
-        grid.innerHTML='<div class="no-games">لا توجد ألعاب مطابقة للبحث 🔎</div>';
-    }else{
-        grid.innerHTML=list.map(game=>{
-            const title=safeText(prettyName(game.name));
-            const img=safeText(imageUrl(game.name));
-            return `
-            <div class="game-card" onclick="openGame('${encodeURIComponent(game.name)}')">
-                <img class="game-thumb"
-                     src="${img}"
-                     alt="${title}"
-                     onerror="this.onerror=null;this.src='https://via.placeholder.com/400x250/060c06/00ff66?text=Matrix+Games'">
-                <div class="game-title">${title}</div>
-                <div class="game-meta">${favoriteGames.has(game.name)?"⭐ مفضلة":"🎮 العب الآن"}</div>
-            </div>`;
-        }).join("");
-    }
-    document.getElementById("game-counter").textContent =
-        `عدد الألعاب المعروضة: ${list.length} | إجمالي الكتالوج: ${catalog.length}`;
+    grid.innerHTML=list.length?list.map(game=>gameCardHtml(game)).join(""):'<div class="no-games">لا توجد ألعاب مطابقة 🔎</div>';
+    document.getElementById("game-counter").textContent=`عدد الألعاب المعروضة: ${list.length} | إجمالي الكتالوج: ${catalog.length}`;
+}
+function renderCategoryBar(){
+    const bar=document.getElementById("category-bar");if(!bar)return;
+    const cats=["الكل",...Object.keys(categoryKeywords)];
+    bar.innerHTML=cats.map(cat=>`<button class="category-chip ${selectedCategory===cat?"active":""}" onclick="selectCategory('${cat}')">${cat}</button>`).join("");
+}
+function selectCategory(category){
+    selectedCategory=category;
+    const q=document.getElementById("search-input").value.trim().toLowerCase();
+    let list=catalog;
+    if(category!=="الكل")list=list.filter(g=>getGameCategory(g)===category);
+    if(q)list=list.filter(g=>g.name.toLowerCase().includes(q)||prettyName(g.name).toLowerCase().includes(q));
+    document.getElementById("home-sections").style.display="none";
+    renderCategoryBar();renderGames(list);
+}
+function renderHomeSections(){
+    const box=document.getElementById("home-sections");if(!box)return;
+    const favorites=catalog.filter(g=>favoriteGames.has(g.name));
+    const most=sortMostPlayed(catalog).slice(0,8);
+    const newest=catalog.filter(g=>g.isNew===true).slice(0,8);
+    const section=(title,items,emptyText)=>'<section class="home-section"><div class="section-head"><h3>'+title+'</h3>'+(items.length?'<button onclick="showAllFromSection()">عرض الكل</button>':'')+'</div>'+(items.length?'<div class="section-grid">'+items.map(game=>gameCardHtml(game)).join("")+'</div>':'<div class="empty-section">'+emptyText+'</div>')+'</section>';
+    box.innerHTML=section("🔥 الأكثر تشغيلًا",most,"ابدأ بلعب الألعاب، وستظهر هنا الأكثر تشغيلًا على جهازك.")+section("🆕 ألعاب جديدة",newest,"الأدمن يقدر يحدد الألعاب الجديدة من لوحة التحكم.")+section("❤️ المفضلة",favorites,"اضغط ⭐ على أي لعبة لإضافتها للمفضلة.");
+    box.style.display="block";renderCategoryBar();
+}
+function showAllFromSection(){document.getElementById("home-sections").style.display="none";renderGames(catalog);window.scrollTo({top:document.getElementById("category-bar")?.offsetTop||0,behavior:"smooth"})}
+function toggleFavorite(encodedName,event){
+    event?.stopPropagation();
+    const name=decodeURIComponent(encodedName);
+    if(favoriteGames.has(name))favoriteGames.delete(name);else favoriteGames.add(name);
+    saveLocalFavorites();
+    if(currentUser&&db)db.collection("users").doc(currentUser.uid).set({favorites:[...favoriteGames]},{merge:true}).catch(e=>console.warn("favorite save:",e));
+    renderHomeSections();filterGames();
 }
 
 function filterGames(){
     const q=document.getElementById("search-input").value.trim().toLowerCase();
-    const filtered=catalog.filter(g =>
-        g.name.toLowerCase().includes(q) ||
-        prettyName(g.name).toLowerCase().includes(q)
-    );
-    renderGames(filtered);
+    let filtered=catalog.filter(g=>g.name.toLowerCase().includes(q)||prettyName(g.name).toLowerCase().includes(q));
+    if(selectedCategory!=="الكل")filtered=filtered.filter(g=>getGameCategory(g)===selectedCategory);
+    document.getElementById("home-sections").style.display=q?"none":"block";
+    renderCategoryBar();renderGames(filtered);
 }
 
 /* =========================================================
@@ -691,7 +777,9 @@ function openGame(encodedName){
     iframe.onload=hideGameLoading;
     iframe.src=url;
 
+    recordLocalPlay(name);
     saveGameActivity(name);
+    renderHomeSections();
 }
 function closeGame(){
     const iframe=document.getElementById("game-container");
@@ -880,7 +968,7 @@ async function loadUserProfile(user){
     currentUser=user;
     if(!user){
         currentProfile=null;
-        favoriteGames=new Set();
+        favoriteGames=new Set(getLocalFavorites());
         document.getElementById("auth-btn-trigger").style.display="inline-block";
         document.getElementById("logout-btn").style.display="none";
         document.getElementById("user-display").style.display="none";
@@ -896,7 +984,8 @@ async function loadUserProfile(user){
         if(snap.exists) profile={...profile,...snap.data()};
     }
     currentProfile=profile;
-    favoriteGames=new Set(profile.favorites||[]);
+    favoriteGames=new Set(profile.favorites||getLocalFavorites());
+    saveLocalFavorites();
 
     document.getElementById("auth-btn-trigger").style.display="none";
     document.getElementById("logout-btn").style.display="inline-block";
@@ -952,10 +1041,31 @@ function populateAdminGameSelect(){
     if(current && names.some(n=>encodeURIComponent(n)===current)) select.value=current;
 }
 
+function syncAdminGameMeta(){
+    const name=decodeURIComponent(document.getElementById("admin-game-select")?.value||"");
+    const game=catalog.find(g=>g.name===name);
+    if(document.getElementById("admin-game-category"))document.getElementById("admin-game-category").value=game?.category||"";
+    if(document.getElementById("admin-game-new"))document.getElementById("admin-game-new").checked=!!game?.isNew;
+    if(document.getElementById("admin-game-featured"))document.getElementById("admin-game-featured").checked=!!game?.featured;
+}
 function selectAdminGame(encodedName){
     const select=document.getElementById("admin-game-select");
-    if(select) select.value=encodedName;
+    if(select)select.value=encodedName;
+    syncAdminGameMeta();
     window.scrollTo({top:0,behavior:"smooth"});
+}
+async function saveSelectedGameMeta(){
+    if(!currentUser||!db){alert("سجل الدخول أولاً.");return;}
+    const name=decodeURIComponent(document.getElementById("admin-game-select")?.value||"");
+    if(!name){alert("اختر اللعبة أولاً.");return;}
+    const category=document.getElementById("admin-game-category")?.value||"أخرى";
+    const isNew=!!document.getElementById("admin-game-new")?.checked;
+    const featured=!!document.getElementById("admin-game-featured")?.checked;
+    try{
+        await db.collection("games").doc(name).set({name,category,isNew,featured,enabled:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:currentUser.uid},{merge:true});
+        await reloadGames();await loadAdminGames();
+        alert("تم حفظ بيانات "+prettyName(name)+" ✅");
+    }catch(e){console.error(e);alert("تعذر حفظ البيانات: "+friendlyFirebaseError(e));}
 }
 
 function compressImageForFirestore(file, maxWidth=640, maxHeight=360, quality=0.78){
@@ -1025,6 +1135,7 @@ async function loadAdminGames(){
     const box=document.getElementById("admin-games");
     if(!db){box.innerHTML="<p class='admin-help'>Firebase غير مضبوط.</p>";return;}
     populateAdminGameSelect();
+    syncAdminGameMeta();
 
     try{
         const snap=await db.collection("games").get();
@@ -1056,6 +1167,8 @@ async function reloadGames(){
             });
         }catch(e){console.warn("Firestore games:",e)}
     }
+    renderCategoryBar();
+    renderHomeSections();
     renderGames();
 }
 
@@ -1063,6 +1176,9 @@ async function reloadGames(){
    9) بداية الموقع
 ========================================================= */
 buildBaseCatalog();
+favoriteGames=new Set(getLocalFavorites());
+renderCategoryBar();
+renderHomeSections();
 renderGames();
 
 // تحميل الصور المخصصة المحفوظة من Firestore تلقائيًا عند فتح الموقع.
