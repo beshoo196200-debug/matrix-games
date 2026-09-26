@@ -661,7 +661,10 @@ function getLocalPlayCounts(){try{return JSON.parse(localStorage.getItem("matrix
 function recordLocalPlay(name){const counts=getLocalPlayCounts();counts[name]=(counts[name]||0)+1;try{localStorage.setItem("matrixGamePlayCounts",JSON.stringify(counts))}catch(e){}}
 function getLocalFavorites(){try{return JSON.parse(localStorage.getItem("matrixGameFavorites")||"[]")}catch(e){return []}}
 function saveLocalFavorites(){try{localStorage.setItem("matrixGameFavorites",JSON.stringify([...favoriteGames]))}catch(e){}}
-function sortMostPlayed(list){const counts=getLocalPlayCounts();return [...list].sort((a,b)=>(counts[b.name]||0)-(counts[a.name]||0))}
+function sortMostPlayed(list){
+    const counts=getLocalPlayCounts();
+    return [...list].filter(g=>(counts[g.name]||0)>0).sort((a,b)=>(counts[b.name]||0)-(counts[a.name]||0));
+}
 
 /* =========================================================
    3) أدوات عامة
@@ -730,7 +733,7 @@ function renderHomeSections(){
     const most=sortMostPlayed(catalog).slice(0,8);
     const newest=catalog.filter(g=>g.isNew===true).slice(0,8);
     const section=(title,items,emptyText)=>'<section class="home-section"><div class="section-head"><h3>'+title+'</h3>'+(items.length?'<button onclick="showAllFromSection()">عرض الكل</button>':'')+'</div>'+(items.length?'<div class="section-grid">'+items.map(game=>gameCardHtml(game)).join("")+'</div>':'<div class="empty-section">'+emptyText+'</div>')+'</section>';
-    box.innerHTML=section("🔥 الأكثر تشغيلًا",most,"ابدأ بلعب الألعاب، وستظهر هنا الأكثر تشغيلًا على جهازك.")+section("🆕 ألعاب جديدة",newest,"الأدمن يقدر يحدد الألعاب الجديدة من لوحة التحكم.")+section("❤️ المفضلة",favorites,"اضغط ⭐ على أي لعبة لإضافتها للمفضلة.");
+    box.innerHTML=section("🔥 الأكثر تشغيلًا لديك",most,"ابدأ بلعب الألعاب، وستظهر هنا الأكثر تشغيلًا على جهازك.")+section("🆕 ألعاب جديدة",newest,"الأدمن يقدر يحدد الألعاب الجديدة من لوحة التحكم.")+section("❤️ المفضلة",favorites,"اضغط ⭐ على أي لعبة لإضافتها للمفضلة.");
     box.style.display="block";renderCategoryBar();
 }
 function showAllFromSection(){document.getElementById("home-sections").style.display="none";renderGames(catalog);window.scrollTo({top:document.getElementById("category-bar")?.offsetTop||0,behavior:"smooth"})}
@@ -974,6 +977,7 @@ async function loadUserProfile(user){
         document.getElementById("user-display").style.display="none";
         document.getElementById("admin-panel-btn").style.display="none";
         document.getElementById("admin-panel").style.display="none";
+        renderHomeSections();
         renderGames();
         return;
     }
@@ -993,6 +997,7 @@ async function loadUserProfile(user){
     document.getElementById("user-display").textContent="👤 "+(profile.username||"لاعب");
 
     await checkAdmin(user.uid);
+    renderHomeSections();
     renderGames();
 }
 
