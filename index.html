@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
 <style>
 *{box-sizing:border-box}
@@ -153,18 +154,13 @@ iframe{width:100%;height:100%;border:none}
 <div id="admin-panel">
     <h3 class="admin-title">⚙️ لوحة تحكم مدير منصة ماتريكس</h3>
     <p class="admin-help">
-        هذه اللوحة تحافظ على فكرة لوحة الأدمن الموجودة في الكود القديم.
-        تستطيع إضافة لعبة إلى كتالوج الموقع وحذف لعبة من الكتالوج.
-        إضافة ملف HTML فعلي جديد إلى مجلد GitHub لا يمكن تنفيذها من صفحة GitHub Pages وحدها.
+        من هنا تختار أي لعبة من الألعاب الموجودة وترفع لها صورة من جهازك.
+        الصورة تُحفظ في Firebase Storage ورابطها في Firestore، ثم تظهر مباشرة على بطاقة اللعبة.
     </p>
 
-    <div class="admin-row">
-        <input type="text" id="new-game-name" class="auth-input"
-               placeholder="اسم مجلد اللعبة مثال: level-devil">
-        <input type="text" id="new-game-img" class="auth-input"
-               placeholder="رابط صورة اللعبة (اختياري)">
-    </div>
-    <button class="auth-btn" onclick="addNewGameFromPanel()">إضافة اللعبة للكتالوج 🚀</button>
+    <select id="admin-game-select" class="auth-input"></select>
+    <input type="file" id="admin-game-image" class="auth-input" accept="image/*">
+    <button class="auth-btn" onclick="uploadSelectedGameImage()">رفع / تغيير صورة اللعبة 🖼️</button>
     <button class="auth-btn secondary-btn" onclick="reloadGames()">تحديث قائمة الألعاب 🔄</button>
 
     <div class="admin-games" id="admin-games"></div>
@@ -191,7 +187,7 @@ iframe{width:100%;height:100%;border:none}
 
         <div id="login-panel">
             <h3 style="color:#00ff66;margin-top:0">تسجيل دخول عالم ماتريكس</h3>
-            <input type="text" id="login-user" class="auth-input" placeholder="اسم الحساب الشخصي">
+            <input type="text" id="login-user" class="auth-input" placeholder="البريد الإلكتروني أو اسم المستخدم">
             <input type="password" id="login-pass" class="auth-input" placeholder="كلمة المرور السرية">
             <button class="auth-btn" onclick="loginPlayer()">دخول السيرفر 🎮</button>
             <span class="toggle-link" onclick="togglePanel(false)">لا تملك حساباً؟ إنشاء حساب لاعب جديد الآن</span>
@@ -218,17 +214,18 @@ iframe{width:100%;height:100%;border:none}
    صلاحيات الأدمن الحقيقية يجب ضبطها في Firestore Rules.
 ========================================================= */
 const firebaseConfig = {
-    apiKey: "PUT_YOUR_FIREBASE_API_KEY_HERE",
-    authDomain: "PUT_YOUR_PROJECT.firebaseapp.com",
-    projectId: "PUT_YOUR_PROJECT_ID_HERE",
-    storageBucket: "PUT_YOUR_PROJECT.appspot.com",
-    messagingSenderId: "PUT_YOUR_SENDER_ID_HERE",
-    appId: "PUT_YOUR_APP_ID_HERE"
+    apiKey: "AIzaSyDzbVpuTCEtKk4m1SRvo7BrQnMh4QEE",
+    authDomain: "matrix-database-b13f3.firebaseapp.com",
+    projectId: "matrix-database-b13f3",
+    storageBucket: "matrix-database-b13f3.firebasestorage.app",
+    messagingSenderId: "985765065408",
+    appId: "1:985765065408:web:80fafe3a94d0406a6b7085"
 };
 
 let firebaseReady = false;
 let auth = null;
 let db = null;
+let storage = null;
 
 try {
     if (!firebaseConfig.apiKey.startsWith("PUT_") &&
@@ -706,14 +703,18 @@ async function registerPlayer(){
 
 async function loginPlayer(){
     if(!firebaseReady){authMessage("Firebase غير مضبوط بعد.");return;}
-    const username=document.getElementById("login-user").value.trim();
+    const loginValue=document.getElementById("login-user").value.trim();
     const pass=document.getElementById("login-pass").value;
-    if(!username || !pass){authMessage("اكتب اسم المستخدم وكلمة المرور.");return;}
+    if(!loginValue || !pass){authMessage("اكتب البريد الإلكتروني أو اسم المستخدم وكلمة المرور.");return;}
 
     try{
-        const userDoc=await db.collection("usernames").doc(normalizeUsername(username)).get();
-        if(!userDoc.exists){authMessage("اسم المستخدم غير موجود.");return;}
-        await auth.signInWithEmailAndPassword(fakeEmail(username),pass);
+        let email=loginValue;
+        if(!loginValue.includes("@")){
+            const userDoc=await db.collection("usernames").doc(normalizeUsername(loginValue)).get();
+            if(!userDoc.exists){authMessage("اسم المستخدم غير موجود.");return;}
+            email=fakeEmail(loginValue);
+        }
+        await auth.signInWithEmailAndPassword(email,pass);
         closeAuthModal();
     }catch(e){
         console.error(e);
@@ -807,60 +808,74 @@ function toggleAdminPanelVisibility(){
     if(p.style.display==="block") loadAdminGames();
 }
 
-async function addNewGameFromPanel(){
-    if(!currentUser || !db){alert("سجل دخول واضبط Firebase أولاً.");return;}
-    const name=document.getElementById("new-game-name").value.trim();
-    const image=document.getElementById("new-game-img").value.trim();
-    if(!name){alert("اكتب اسم مجلد اللعبة.");return;}
+function populateAdminGameSelect(){
+    const select=document.getElementById("admin-game-select");
+    if(!select) return;
+    const names=[...new Set(catalog.map(g=>g.name))].sort((a,b)=>prettyName(a).localeCompare(prettyName(b)));
+    const current=select.value;
+    select.innerHTML=names.map(name=>`<option value="${encodeURIComponent(name)}">${safeText(prettyName(name))}</option>`).join("");
+    if(current && names.some(n=>encodeURIComponent(n)===current)) select.value=current;
+}
+
+function selectAdminGame(encodedName){
+    const select=document.getElementById("admin-game-select");
+    if(select) select.value=encodedName;
+    window.scrollTo({top:0,behavior:"smooth"});
+}
+
+async function uploadSelectedGameImage(){
+    if(!currentUser || !db || !storage){alert("سجل الدخول أولاً وتأكد من تفعيل Firebase Storage.");return;}
+    const select=document.getElementById("admin-game-select");
+    const input=document.getElementById("admin-game-image");
+    const name=decodeURIComponent(select?.value||"");
+    const file=input?.files?.[0];
+
+    if(!name){alert("اختر اللعبة أولاً.");return;}
+    if(!file){alert("اختر صورة من جهازك أولاً.");return;}
+    if(!file.type.startsWith("image/")){alert("الملف المختار ليس صورة.");return;}
+    if(file.size>5*1024*1024){alert("حجم الصورة يجب ألا يتجاوز 5 ميجابايت.");return;}
 
     try{
-        const ref=db.collection("games").doc(name);
-        await ref.set({
-            name,image,source:"admin",enabled:true,
-            createdAt:firebase.firestore.FieldValue.serverTimestamp(),
-            createdBy:currentUser.uid
-        });
-        alert("تمت إضافة اللعبة للكتالوج. يجب أن يكون مجلدها موجوداً داخل offline/.");
-        document.getElementById("new-game-name").value="";
-        document.getElementById("new-game-img").value="";
+        const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+        const safeName=name.replace(/[^a-zA-Z0-9._-]/g,"_");
+        const storageRef=storage.ref().child("game-images/"+safeName+"."+ext);
+        await storageRef.put(file,{contentType:file.type,cacheControl:"public,max-age=3600"});
+        const image=await storageRef.getDownloadURL();
+
+        await db.collection("games").doc(name).set({
+            name,image,source:"local",enabled:true,
+            updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy:currentUser.uid
+        },{merge:true});
+
+        input.value="";
         await reloadGames();
         await loadAdminGames();
+        alert("تم رفع صورة "+prettyName(name)+" بنجاح ✅");
     }catch(e){
         console.error(e);
-        alert("تعذر الإضافة: "+friendlyFirebaseError(e));
+        alert("تعذر رفع الصورة: "+friendlyFirebaseError(e));
     }
 }
 
 async function loadAdminGames(){
     const box=document.getElementById("admin-games");
     if(!db){box.innerHTML="<p class='admin-help'>Firebase غير مضبوط.</p>";return;}
-    try{
-        const snap=await db.collection("games").orderBy("name").get();
-        if(snap.empty){
-            box.innerHTML="<p class='admin-help'>لا توجد ألعاب إضافية في Firestore.</p>";
-            return;
-        }
-        box.innerHTML=snap.docs.map(d=>{
-            const g=d.data();
-            return `<div class="admin-game-row">
-                <span>${safeText(g.name||d.id)}</span>
-                <button class="danger-btn" onclick="deleteCatalogGame('${encodeURIComponent(d.id)}')">حذف</button>
-            </div>`;
-        }).join("");
-    }catch(e){
-        box.innerHTML="<p class='admin-help'>تعذر قراءة كتالوج الأدمن. راجع Firestore Rules.</p>";
-    }
-}
+    populateAdminGameSelect();
 
-async function deleteCatalogGame(encoded){
-    if(!db || !currentUser)return;
-    const name=decodeURIComponent(encoded);
-    if(!confirm("حذف "+name+" من كتالوج Firestore؟"))return;
     try{
-        await db.collection("games").doc(name).delete();
-        await reloadGames();
-        await loadAdminGames();
-    }catch(e){alert("تعذر الحذف: "+friendlyFirebaseError(e))}
+        const snap=await db.collection("games").get();
+        const imageMap={};
+        snap.forEach(d=>{const g=d.data(); if(g.name && g.image) imageMap[g.name]=g.image;});
+
+        const names=[...new Set(catalog.map(g=>g.name))].sort((a,b)=>prettyName(a).localeCompare(prettyName(b)));
+        box.innerHTML=names.map(name=>`<div class="admin-game-row">
+            <span>${safeText(prettyName(name))} — ${imageMap[name]?"🖼️ صورة مخصصة":"بدون صورة مخصصة"}</span>
+            <button class="secondary-btn" onclick="selectAdminGame('${encodeURIComponent(name)}')">${imageMap[name]?"تغيير الصورة":"اختيار"}</button>
+        </div>`).join("");
+    }catch(e){
+        box.innerHTML="<p class='admin-help'>تعذر قراءة صور الألعاب. راجع Firestore Rules.</p>";
+    }
 }
 
 async function reloadGames(){
