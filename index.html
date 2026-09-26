@@ -1067,6 +1067,18 @@ if(firebaseReady){
 }
 
 if(firebaseReady){
+    // إتمام نتيجة تسجيل الدخول عبر Google/Facebook بعد الرجوع من صفحة المزوّد.
+    auth.getRedirectResult()
+        .then(result=>{
+            if(result && result.user){
+                closeAuthModal();
+            }
+        })
+        .catch(e=>{
+            console.error("Redirect sign-in:",e);
+            authMessage("تعذر إكمال تسجيل الدخول: "+friendlyFirebaseError(e));
+        });
+
     auth.onAuthStateChanged(user=>{
         loadUserProfile(user).catch(console.error);
     });
