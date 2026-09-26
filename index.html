@@ -1512,7 +1512,7 @@ function settingsDefaults(){return {title:"Matrix Games",heroTitle:"Matrix Games
 async function loadSiteSettings(){
     if(!db)return;
     try{
-        const snap=await db.collection("games").doc("__site_settings__").get();
+        const snap=await db.collection("games").doc("site_settings").get();
         siteSettings=snap.exists?{...settingsDefaults(),...snap.data()}:settingsDefaults();
         applySiteSettings();
         loadSiteSettingsToForm();
@@ -1567,7 +1567,7 @@ async function saveSiteSettings(){
             statusMessage:document.getElementById("site-status-message-input")?.value.trim()||""};
         if(logo&&logo.length>700000){alert("لوجو الموقع كبير. اختَر صورة أصغر.");return;}
         if(logo)siteSettings.logo=logo;
-        await db.collection("games").doc("__site_settings__").set(siteSettings,{merge:true});
+        await db.collection("games").doc("site_settings").set(siteSettings,{merge:true});
         applySiteSettings();
         const msg=document.getElementById("design-message");if(msg)msg.textContent="تم حفظ تصميم وإعدادات الموقع ✅";
         const msg2=document.getElementById("settings-message");if(msg2)msg2.textContent="تم حفظ إعدادات الموقع ✅";
