@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/jpeg" href="assets/matrix-logo-192.jpg">
+<link rel="apple-touch-icon" href="assets/matrix-logo-192.jpg">
 <title>Matrix Games | عالم ماتريكس للألعاب</title>
 
 <!-- Firebase: استبدل إعدادات المشروع في الأسفل ببيانات مشروعك -->
@@ -23,7 +25,8 @@ body{
     background:#060c06;padding:15px 30px;border-bottom:2px solid #00ff66;
     box-shadow:0 4px 20px rgba(0,255,102,.15);position:sticky;top:0;z-index:1000;
 }
-.logo-title{font-size:26px;font-weight:900;color:#00ff66;text-shadow:0 0 15px rgba(0,255,102,.6);letter-spacing:1px;white-space:nowrap}
+.logo-title{display:flex;align-items:center;gap:10px;font-size:26px;font-weight:900;color:#00ff66;text-shadow:0 0 15px rgba(0,255,102,.6);letter-spacing:1px;white-space:nowrap}
+.site-logo{width:44px;height:44px;display:block;object-fit:cover;border-radius:50%;border:1px solid rgba(0,255,102,.35);box-shadow:0 0 14px rgba(0,255,102,.22)}
 .header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
 .search-box{
     padding:11px 18px;border-radius:20px;border:1px solid #142414;
@@ -142,7 +145,8 @@ iframe{width:100%;height:100%;border:none}
 
 @media(max-width:800px){
     .top-header{flex-direction:column;padding:12px}
-    .logo-title{font-size:22px}
+    .logo-title{font-size:20px}
+    .site-logo{width:38px;height:38px}
     .header-actions{width:100%}
     .search-box{width:min(100%,340px)}
     .games-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
@@ -158,7 +162,7 @@ iframe{width:100%;height:100%;border:none}
 <body>
 
 <div class="top-header">
-    <div class="logo-title">MATRIX GAMES</div>
+    <div class="logo-title"><img class="site-logo" src="assets/matrix-logo-192.jpg" alt="Matrix Games"><span>MATRIX GAMES</span></div>
     <div class="header-actions">
         <input type="text" id="search-input" class="search-box"
                placeholder="🔍 ابحث عن ألعاب ماتريكس..." oninput="filterGames()">
