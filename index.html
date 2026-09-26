@@ -223,6 +223,12 @@ iframe{width:100%;height:100%;border:none}
             <input type="text" id="login-user" class="auth-input" placeholder="البريد الإلكتروني أو اسم المستخدم">
             <input type="password" id="login-pass" class="auth-input" placeholder="كلمة المرور السرية">
             <button class="auth-btn" onclick="loginPlayer()">دخول السيرفر 🎮</button>
+            <div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:#6f8b6f;font-size:12px">
+                <span style="height:1px;background:#1b321f;flex:1"></span><span>أو</span>
+                <span style="height:1px;background:#1b321f;flex:1"></span>
+            </div>
+            <button class="auth-btn" style="background:#fff;color:#222" onclick="loginWithGoogle()">الدخول باستخدام Google 🔵</button>
+            <button class="auth-btn" style="background:#1877f2;color:#fff" onclick="loginWithFacebook()">الدخول باستخدام Facebook 🔷</button>
             <span class="toggle-link" onclick="togglePanel(false)">لا تملك حساباً؟ إنشاء حساب لاعب جديد الآن</span>
         </div>
 
@@ -814,6 +820,33 @@ async function loginPlayer(){
         authMessage("تعذر تسجيل الدخول: "+friendlyFirebaseError(e));
     }
 }
+async function loginWithGoogle(){
+    if(!firebaseReady){authMessage("Firebase غير مضبوط بعد.");return;}
+    try{
+        const provider=new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({prompt:"select_account"});
+        const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if(isMobile) await auth.signInWithRedirect(provider);
+        else await auth.signInWithPopup(provider);
+    }catch(e){
+        console.error(e);
+        authMessage("تعذر تسجيل الدخول عبر Google: "+friendlyFirebaseError(e));
+    }
+}
+
+async function loginWithFacebook(){
+    if(!firebaseReady){authMessage("Firebase غير مضبوط بعد.");return;}
+    try{
+        const provider=new firebase.auth.FacebookAuthProvider();
+        const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if(isMobile) await auth.signInWithRedirect(provider);
+        else await auth.signInWithPopup(provider);
+    }catch(e){
+        console.error(e);
+        authMessage("تعذر تسجيل الدخول عبر Facebook: "+friendlyFirebaseError(e));
+    }
+}
+
 function logoutPlayer(){
     if(auth) auth.signOut();
 }
@@ -826,7 +859,12 @@ function friendlyFirebaseError(e){
         "auth/user-not-found":"الحساب غير موجود.",
         "auth/email-already-in-use":"الحساب موجود بالفعل.",
         "auth/weak-password":"كلمة المرور ضعيفة.",
-        "auth/network-request-failed":"تحقق من اتصال الإنترنت."
+        "auth/network-request-failed":"تحقق من اتصال الإنترنت.",
+        "auth/account-exists-with-different-credential":"هذا البريد مرتبط بطريقة دخول أخرى في Firebase. سجّل بالطريقة الأصلية أولاً.",
+        "auth/operation-not-allowed":"طريقة تسجيل الدخول دي لسه مش مفعّلة في Firebase.",
+        "auth/popup-closed-by-user":"تم إغلاق نافذة تسجيل الدخول.",
+        "auth/popup-blocked":"المتصفح منع نافذة تسجيل الدخول؛ جرّب مرة أخرى.",
+        "auth/unauthorized-domain":"دومين الموقع غير مضاف إلى Authorized domains في Firebase."
     };
     return map[code] || e.message || "خطأ غير معروف";
 }
