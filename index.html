@@ -176,6 +176,12 @@ iframe{width:100%;height:100%;border:none}
     .btn{padding:9px 12px;font-size:12px}
     #current-title{font-size:14px!important}
 }
+
+.hero-brand{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap}
+.hero-logo{width:80px;height:80px;object-fit:cover;border-radius:20px;border:2px solid rgba(0,255,102,.4);box-shadow:0 0 28px rgba(0,255,102,.28);background:#060c06}
+.admin-shell{width:100%}.admin-topbar{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:20px}.admin-kicker{font-size:11px;letter-spacing:2px;color:#7ea77e;font-weight:800}.admin-close-btn{background:#142414;color:#fff;border:1px solid #315b38;border-radius:10px;padding:10px 14px;cursor:pointer}.admin-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.admin-stat{background:#071207;border:1px solid #1b321f;border-radius:16px;padding:15px;text-align:center}.admin-stat span{display:block;font-size:22px}.admin-stat b{display:block;font-size:25px;color:#00ff66;margin:4px 0}.admin-stat small{color:#779077}.admin-layout{display:grid;grid-template-columns:210px 1fr;gap:16px;direction:ltr}.admin-sidebar{background:#071207;border:1px solid #1b321f;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;direction:rtl}.admin-nav{width:100%;padding:12px;border:1px solid transparent;background:transparent;color:#a3bfa3;border-radius:10px;text-align:right;cursor:pointer;font-weight:800}.admin-nav:hover,.admin-nav.active{background:#102011;border-color:#24462b;color:#00ff66}.admin-content{min-width:0;direction:rtl}.admin-tab{display:none}.admin-tab.active{display:block}.admin-panel-card{background:#071207;border:1px solid #1b321f;border-radius:16px;padding:18px;margin-bottom:14px}.admin-panel-card h3{margin:0 0 10px;color:#00ff66}.admin-feature-list{display:grid;gap:8px;color:#a3bfa3;text-align:right}.admin-quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}.admin-quick-grid button{padding:14px;background:#102011;color:#dfffe8;border:1px solid #2b5031;border-radius:12px;cursor:pointer;font-weight:800}.admin-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.admin-form-wide{grid-column:1/-1}.admin-label{display:block;color:#a3bfa3;font-size:12px;margin:0 0 4px;font-weight:700}.admin-color-input{width:100%;height:46px;border-radius:8px;border:1px solid #1b321f;background:#060c06;padding:4px}.range-value{color:#00ff66;font-weight:700;font-size:12px}.code-editor{width:100%;min-height:360px;background:#020602;border:1px solid #234528;border-radius:12px;color:#d9ffdf;padding:15px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.55;direction:ltr;text-align:left;resize:vertical;outline:none}.code-editor:focus{border-color:#00ff66;box-shadow:0 0 12px rgba(0,255,102,.12)}.admin-upload-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.admin-inline-btn{height:46px}.admin-checks-left{justify-content:flex-start}.admin-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.admin-action-btn{width:100%;padding:13px;border-radius:8px;font-weight:bold;cursor:pointer}.admin-message{min-height:22px;margin-top:10px;color:#ffdf70;font-size:13px}.admin-games{margin-top:10px;max-height:420px;overflow:auto;border:1px solid #142414;border-radius:12px}.admin-game-row{padding:10px 12px!important}.admin-game-row span{flex:1;text-align:right}.admin-game-row button{white-space:nowrap}.danger-btn{background:#f43f5e!important;color:#fff!important;border:0}.admin-stat:first-child b{}
+@media(max-width:900px){.admin-layout{grid-template-columns:1fr}.admin-sidebar{display:grid;grid-template-columns:repeat(2,1fr)}.admin-stat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.hero-logo{width:68px;height:68px}.hero h1{font-size:28px}.admin-topbar{flex-direction:column}.admin-form-grid,.admin-actions,.admin-quick-grid{grid-template-columns:1fr}.admin-upload-row{grid-template-columns:1fr}.admin-stat-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 
@@ -196,36 +202,260 @@ iframe{width:100%;height:100%;border:none}
 </div>
 
 <div class="hero">
-    <h1>🎮 Matrix Games</h1>
-    <p>عالم ماتريكس للألعاب — العب ألعابك مباشرة من مجلد offline</p>
+    <div class="hero-brand">
+        <img id="hero-logo" class="hero-logo" src="assets/matrix-logo-192.jpg" alt="Matrix Games">
+        <h1 id="hero-title">Matrix Games</h1>
+    </div>
+    <p id="hero-subtitle">عالم ماتريكس للألعاب — العب ألعابك مباشرة من مجلد offline</p>
     <div class="counter" id="game-counter">جاري تحميل الألعاب...</div>
 </div>
 
 <div id="admin-panel">
-    <h3 class="admin-title">⚙️ لوحة تحكم مدير منصة ماتريكس</h3>
-    <p class="admin-help">
-        من هنا تختار أي لعبة من الألعاب الموجودة وترفع لها صورة من جهازك.
-        الصورة يتم ضغطها في المتصفح وحفظها مباشرة في Firestore، ثم تظهر على بطاقة اللعبة.
-    </p>
+    <div class="admin-shell">
+        <div class="admin-topbar">
+            <div>
+                <div class="admin-kicker">MATRIX CONTROL CENTER</div>
+                <h2 class="admin-title">⚙️ لوحة تحكم ماتريكس Games</h2>
+                <p class="admin-help">إدارة الألعاب، الإحصائيات، الصور، التصنيفات، المظهر، الألعاب الجديدة، والإعدادات من مكان واحد.</p>
+            </div>
+            <button class="admin-close-btn" onclick="toggleAdminPanelVisibility()">✕ إغلاق</button>
+        </div>
 
-    <select id="admin-game-select" class="auth-input"></select>
-    <input type="file" id="admin-game-image" class="auth-input" accept="image/*">
-    <select id="admin-game-category" class="auth-input">
-        <option value="">اختيار التصنيف</option>
-        <option value="أكشن">أكشن</option><option value="سباق">سباق</option><option value="رياضة">رياضة</option>
-        <option value="رعب">رعب</option><option value="ألغاز">ألغاز</option><option value="مغامرات">مغامرات</option>
-        <option value="قتال">قتال</option><option value="ألعاب 2 لاعب">ألعاب 2 لاعب</option>
-        <option value="IO">IO</option><option value="أركيد">أركيد</option><option value="أخرى">أخرى</option>
-    </select>
-    <div class="admin-checks">
-        <label><input type="checkbox" id="admin-game-new"> 🆕 لعبة جديدة</label>
-        <label><input type="checkbox" id="admin-game-featured"> ⭐ مميزة</label>
+        <div class="admin-stat-grid">
+            <div class="admin-stat"><span>🎮</span><b id="stat-total-games">0</b><small>إجمالي الألعاب</small></div>
+            <div class="admin-stat"><span>🛠️</span><b id="stat-custom-games">0</b><small>ألعاب أنشأتها</small></div>
+            <div class="admin-stat"><span>🖼️</span><b id="stat-images">0</b><small>صور مخصصة</small></div>
+            <div class="admin-stat"><span>🆕</span><b id="stat-new-games">0</b><small>ألعاب جديدة</small></div>
+        </div>
+
+        <div class="admin-layout">
+            <aside class="admin-sidebar">
+                <button class="admin-nav active" onclick="switchAdminTab('overview',this)">📊 نظرة عامة</button>
+                <button class="admin-nav" onclick="switchAdminTab('add-game',this)">➕ إضافة لعبة</button>
+                <button class="admin-nav" onclick="switchAdminTab('manage-games',this)">🎮 إدارة الألعاب</button>
+                <button class="admin-nav" onclick="switchAdminTab('design',this)">🎨 تصميم الموقع</button>
+                <button class="admin-nav" onclick="switchAdminTab('settings',this)">⚙️ إعدادات الموقع</button>
+                <button class="admin-nav" onclick="switchAdminTab('tools',this)">🧰 أدوات المدير</button>
+            </aside>
+
+            <main class="admin-content">
+                <section id="admin-tab-overview" class="admin-tab active">
+                    <div class="admin-panel-card">
+                        <h3>مرحبًا بك في مركز التحكم 👑</h3>
+                        <p class="admin-help">كل التعديلات الإدارية هنا محفوظة في Firestore. الألعاب المحلية القديمة تظل كما هي، ويمكنك إضافة ألعاب HTML جديدة من نفس الصفحة.</p>
+                    </div>
+                    <div class="admin-quick-grid">
+                        <button onclick="switchAdminTab('add-game')">➕ إنشاء لعبة جديدة</button>
+                        <button onclick="switchAdminTab('manage-games')">🖼️ تعديل الألعاب</button>
+                        <button onclick="switchAdminTab('design')">🎨 تغيير شكل الموقع</button>
+                        <button onclick="reloadGames();loadAdminDashboard()">🔄 تحديث البيانات</button>
+                    </div>
+                    <div class="admin-panel-card">
+                        <h3>🚀 ماذا تقدر تعمل؟</h3>
+                        <div class="admin-feature-list">
+                            <div>✅ إضافة لعبة HTML من ملف أو من المحرر</div>
+                            <div>✅ اختيار تصنيف وصورة وخلفية للعبة</div>
+                            <div>✅ إنشاء ألعاب جاهزة من قوالب بسيطة</div>
+                            <div>✅ تحديد لعبة جديدة أو مميزة</div>
+                            <div>✅ تغيير شعار الموقع والعنوان والألوان والخلفية</div>
+                            <div>✅ إدارة الألعاب المخفية وإعادتها</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="admin-tab-add-game" class="admin-tab">
+                    <div class="admin-panel-card">
+                        <h3>➕ إنشاء وإضافة لعبة من الصفحة</h3>
+                        <p class="admin-help">تقدر تكتب HTML/CSS/JavaScript بنفسك، تختار قالب جاهز، أو ترفع ملف HTML ذاتي التشغيل.</p>
+
+                        <div class="admin-form-grid">
+                            <div>
+                                <label class="admin-label">اسم اللعبة</label>
+                                <input id="new-game-name" class="auth-input" placeholder="مثال: Matrix Runner">
+                            </div>
+                            <div>
+                                <label class="admin-label">التصنيف</label>
+                                <select id="new-game-category" class="auth-input">
+                                    <option value="أخرى">أخرى</option><option value="أكشن">أكشن</option><option value="سباق">سباق</option>
+                                    <option value="رياضة">رياضة</option><option value="رعب">رعب</option><option value="ألغاز">ألغاز</option>
+                                    <option value="مغامرات">مغامرات</option><option value="قتال">قتال</option><option value="ألعاب 2 لاعب">ألعاب 2 لاعب</option>
+                                    <option value="IO">IO</option><option value="أركيد">أركيد</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="admin-label">قالب البداية</label>
+                                <select id="new-game-template" class="auth-input" onchange="applyGameTemplate()">
+                                    <option value="">محرر فارغ</option>
+                                    <option value="clicker">🖱️ Clicker</option>
+                                    <option value="dodge">🟥 Dodge</option>
+                                    <option value="guess">🔢 Guess the Number</option>
+                                    <option value="runner">🏃 Mini Runner</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="admin-label">صورة اللعبة</label>
+                                <input type="file" id="new-game-image" class="auth-input" accept="image/*">
+                            </div>
+                            <div>
+                                <label class="admin-label">خلفية اللعبة</label>
+                                <input type="file" id="new-game-bg-image" class="auth-input" accept="image/*">
+                            </div>
+                            <div>
+                                <label class="admin-label">لون الخلفية</label>
+                                <input type="color" id="new-game-bg-color" class="admin-color-input" value="#050805">
+                            </div>
+                        </div>
+
+                        <div class="admin-checks admin-checks-left">
+                            <label><input type="checkbox" id="new-game-new" checked> 🆕 لعبة جديدة</label>
+                            <label><input type="checkbox" id="new-game-featured"> ⭐ لعبة مميزة</label>
+                        </div>
+
+                        <div class="admin-upload-row">
+                            <input type="file" id="new-game-html-file" class="auth-input" accept=".html,.htm,text/html">
+                            <button class="secondary-btn admin-inline-btn" onclick="loadHtmlFileIntoEditor()">📄 تحميل ملف HTML إلى المحرر</button>
+                        </div>
+
+                        <label class="admin-label">كود اللعبة HTML / CSS / JavaScript</label>
+                        <textarea id="new-game-code" class="code-editor" spellcheck="false" placeholder="اكتب كود اللعبة هنا..."></textarea>
+
+                        <div class="admin-actions">
+                            <button class="auth-btn" onclick="previewNewGame()">👀 معاينة اللعبة</button>
+                            <button class="auth-btn" onclick="saveCustomGame()">💾 حفظ ونشر اللعبة</button>
+                            <button class="secondary-btn admin-action-btn" onclick="clearGameBuilder()">🧹 تفريغ</button>
+                        </div>
+                        <div id="custom-game-message" class="admin-message"></div>
+                    </div>
+                </section>
+
+                <section id="admin-tab-manage-games" class="admin-tab">
+                    <div class="admin-panel-card">
+                        <h3>🎮 إدارة أي لعبة</h3>
+                        <div class="admin-form-grid">
+                            <div class="admin-form-wide">
+                                <label class="admin-label">اختر اللعبة</label>
+                                <select id="admin-game-select" class="auth-input" onchange="syncAdminGameMeta()"></select>
+                            </div>
+                            <div>
+                                <label class="admin-label">التصنيف</label>
+                                <select id="admin-game-category" class="auth-input">
+                                    <option value="">اختيار التصنيف</option>
+                                    <option value="أكشن">أكشن</option><option value="سباق">سباق</option><option value="رياضة">رياضة</option>
+                                    <option value="رعب">رعب</option><option value="ألغاز">ألغاز</option><option value="مغامرات">مغامرات</option>
+                                    <option value="قتال">قتال</option><option value="ألعاب 2 لاعب">ألعاب 2 لاعب</option>
+                                    <option value="IO">IO</option><option value="أركيد">أركيد</option><option value="أخرى">أخرى</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="admin-label">صورة اللعبة</label>
+                                <input type="file" id="admin-game-image" class="auth-input" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="admin-checks admin-checks-left">
+                            <label><input type="checkbox" id="admin-game-new"> 🆕 لعبة جديدة</label>
+                            <label><input type="checkbox" id="admin-game-featured"> ⭐ لعبة مميزة</label>
+                        </div>
+                        <div class="admin-actions">
+                            <button class="auth-btn" onclick="saveSelectedGameMeta()">💾 حفظ البيانات</button>
+                            <button class="auth-btn" onclick="uploadSelectedGameImage()">🖼️ رفع / تغيير الصورة</button>
+                            <button class="secondary-btn admin-action-btn" onclick="loadSelectedGameIntoBuilder()">🛠️ فتح في محرر اللعبة</button>
+                            <button class="danger-btn admin-action-btn" onclick="disableSelectedGame()">🚫 إخفاء / تعطيل</button>
+                            <button class="secondary-btn admin-action-btn" onclick="restoreSelectedGame()">✅ إعادة تفعيل</button>
+                        </div>
+                        <div id="admin-manage-message" class="admin-message"></div>
+                    </div>
+                    <div class="admin-panel-card">
+                        <h3>📚 قائمة الألعاب</h3>
+                        <div id="admin-games" class="admin-games"></div>
+                    </div>
+                </section>
+
+                <section id="admin-tab-design" class="admin-tab">
+                    <div class="admin-panel-card">
+                        <h3>🎨 تصميم الموقع</h3>
+                        <p class="admin-help">هذه التعديلات تخص شكل الموقع نفسه وليست بيانات دخول أو أسرار.</p>
+                        <div class="admin-form-grid">
+                            <div>
+                                <label class="admin-label">اسم الموقع</label>
+                                <input id="site-title-input" class="auth-input" value="Matrix Games">
+                            </div>
+                            <div>
+                                <label class="admin-label">عنوان الواجهة</label>
+                                <input id="site-hero-title-input" class="auth-input" value="Matrix Games">
+                            </div>
+                            <div class="admin-form-wide">
+                                <label class="admin-label">الوصف تحت العنوان</label>
+                                <input id="site-hero-subtitle-input" class="auth-input" value="عالم ماتريكس للألعاب">
+                            </div>
+                            <div>
+                                <label class="admin-label">اللون الرئيسي</label>
+                                <input type="color" id="site-accent-input" class="admin-color-input" value="#00ff66">
+                            </div>
+                            <div>
+                                <label class="admin-label">لون الخلفية العلوي</label>
+                                <input type="color" id="site-bg-top-input" class="admin-color-input" value="#060c06">
+                            </div>
+                            <div>
+                                <label class="admin-label">لون الخلفية السفلي</label>
+                                <input type="color" id="site-bg-bottom-input" class="admin-color-input" value="#010301">
+                            </div>
+                            <div>
+                                <label class="admin-label">حجم لوجو الواجهة</label>
+                                <input type="range" id="site-hero-logo-size-input" min="55" max="120" value="80" oninput="document.getElementById('site-hero-logo-size-value').textContent=this.value+'px'">
+                                <span id="site-hero-logo-size-value" class="range-value">80px</span>
+                            </div>
+                            <div>
+                                <label class="admin-label">إظهار عداد الألعاب</label>
+                                <select id="site-counter-input" class="auth-input"><option value="true">نعم</option><option value="false">لا</option></select>
+                            </div>
+                            <div class="admin-form-wide">
+                                <label class="admin-label">لوجو الموقع</label>
+                                <input type="file" id="site-logo-input" class="auth-input" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="admin-actions">
+                            <button class="auth-btn" onclick="saveSiteSettings()">💾 حفظ التصميم والإعدادات</button>
+                            <button class="secondary-btn admin-action-btn" onclick="resetSiteSettings()">↩️ إعادة الإعدادات الأساسية</button>
+                        </div>
+                        <div id="design-message" class="admin-message"></div>
+                    </div>
+                </section>
+
+                <section id="admin-tab-settings" class="admin-tab">
+                    <div class="admin-panel-card">
+                        <h3>⚙️ إعدادات الموقع</h3>
+                        <div class="admin-form-grid">
+                            <div>
+                                <label class="admin-label">زر تسجيل الدخول</label>
+                                <select id="site-login-button-input" class="auth-input"><option value="true">ظاهر</option><option value="false">مخفي</option></select>
+                            </div>
+                            <div>
+                                <label class="admin-label">رسالة الصفحة</label>
+                                <input id="site-status-message-input" class="auth-input" placeholder="مثال: أهلاً بكم في Matrix Games">
+                            </div>
+                        </div>
+                        <div class="admin-actions">
+                            <button class="auth-btn" onclick="saveSiteSettings()">💾 حفظ الإعدادات</button>
+                            <button class="secondary-btn admin-action-btn" onclick="loadSiteSettingsToForm()">🔄 استرجاع القيم الحالية</button>
+                        </div>
+                        <div id="settings-message" class="admin-message"></div>
+                    </div>
+                </section>
+
+                <section id="admin-tab-tools" class="admin-tab">
+                    <div class="admin-panel-card">
+                        <h3>🧰 أدوات المدير</h3>
+                        <div class="admin-quick-grid">
+                            <button onclick="reloadGames();loadAdminDashboard()">🔄 تحديث الكتالوج</button>
+                            <button onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆️ أعلى الصفحة</button>
+                            <button onclick="openAuthModal()">👤 اختبار تسجيل الدخول</button>
+                        </div>
+                        <p class="admin-help">ملاحظة: قواعد Firestore الحالية هي التي تحمي عمليات الكتابة. بيانات إعدادات الشكل العامة ليست أسرارًا لأنها تُقرأ من الموقع.</p>
+                    </div>
+                </section>
+            </main>
+        </div>
     </div>
-    <button class="auth-btn" onclick="saveSelectedGameMeta()">حفظ بيانات اللعبة 💾</button>
-    <button class="auth-btn" onclick="uploadSelectedGameImage()">رفع / تغيير صورة اللعبة 🖼️</button>
-    <button class="auth-btn secondary-btn" onclick="reloadGames()">تحديث قائمة الألعاب 🔄</button>
-
-    <div class="admin-games" id="admin-games"></div>
 </div>
 
 <div class="main-container">
@@ -641,6 +871,18 @@ let currentUser = null;
 let currentProfile = null;
 let favoriteGames = new Set();
 let selectedCategory = "الكل";
+let siteSettings = {
+    title:"Matrix Games",
+    heroTitle:"Matrix Games",
+    heroSubtitle:"عالم ماتريكس للألعاب — العب ألعابك مباشرة من مجلد offline",
+    accentColor:"#00ff66",
+    bgTop:"#060c06",
+    bgBottom:"#010301",
+    heroLogoSize:80,
+    showCounter:true,
+    showLogin:true,
+    statusMessage:""
+};
 const categoryKeywords = {
     "أكشن":["shooter","shoot","war","zombie","angry","battle","stick","snout","tank","fnaf","granny","superhot","backrooms"],
     "سباق":["racing","race","car","moto","motorcycle","drift","drive","road","bike","rider","kart","polytrack","slope","x3m","derby"],
@@ -769,9 +1011,18 @@ function hideGameLoading(){
     if(loading) loading.classList.add("hidden");
 }
 
+function buildCustomGameDocument(game){
+    let source=String(game?.htmlCode||"");
+    if(!source.trim()) return "";
+    const bgColor=game.gameBackgroundColor||"#050805";
+    const bgImage=game.gameBackgroundImage||"";
+    const extra='<style id="matrix-game-background">html,body{margin:0!important;min-height:100%!important;}body{background:'+(bgImage?'url("'+bgImage+'") center/cover fixed no-repeat, ':'')+bgColor+'!important;}</style>';
+    if(/<\/head>/i.test(source)) return source.replace(/<\/head>/i,extra+"</head>");
+    return "<!doctype html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'>"+extra+"</head><body>"+source+"</body></html>";
+}
 function openGame(encodedName){
     const name=decodeURIComponent(encodedName);
-    const url=gameUrl(name);
+    const game=catalog.find(g=>g.name===name);
     const iframe=document.getElementById("game-container");
 
     document.getElementById("current-title").textContent=prettyName(name);
@@ -780,7 +1031,13 @@ function openGame(encodedName){
     document.body.style.overflow="hidden";
 
     iframe.onload=hideGameLoading;
-    iframe.src=url;
+    iframe.removeAttribute("src");
+    iframe.srcdoc="";
+    if(game?.htmlCode){
+        iframe.srcdoc=buildCustomGameDocument(game);
+    }else{
+        iframe.src=gameUrl(name);
+    }
 
     recordLocalPlay(name);
     saveGameActivity(name);
@@ -789,6 +1046,7 @@ function openGame(encodedName){
 function closeGame(){
     const iframe=document.getElementById("game-container");
     iframe.src="";
+    iframe.srcdoc="";
     hideGameLoading();
     document.getElementById("game-screen").style.display="none";
     document.body.style.overflow="";
@@ -1036,7 +1294,25 @@ async function checkAdmin(uid){
 function toggleAdminPanelVisibility(){
     const p=document.getElementById("admin-panel");
     p.style.display=p.style.display==="block"?"none":"block";
-    if(p.style.display==="block") loadAdminGames();
+    if(p.style.display==="block"){
+        loadAdminDashboard();
+        loadAdminGames();
+        loadSiteSettingsToForm();
+        switchAdminTab("overview");
+    }
+}
+function switchAdminTab(tab,btn){
+    document.querySelectorAll(".admin-tab").forEach(x=>x.classList.remove("active"));
+    const target=document.getElementById("admin-tab-"+tab);
+    if(target)target.classList.add("active");
+    document.querySelectorAll(".admin-nav").forEach(x=>x.classList.remove("active"));
+    if(btn)btn.classList.add("active");
+    else{
+        const candidate=[...document.querySelectorAll(".admin-nav")].find(x=>x.getAttribute("onclick")?.includes("'"+tab+"'"));
+        if(candidate)candidate.classList.add("active");
+    }
+    if(tab==="manage-games")loadAdminGames();
+    if(tab==="design"||tab==="settings")loadSiteSettingsToForm();
 }
 
 function populateAdminGameSelect(){
@@ -1054,6 +1330,8 @@ function syncAdminGameMeta(){
     if(document.getElementById("admin-game-category"))document.getElementById("admin-game-category").value=game?.category||"";
     if(document.getElementById("admin-game-new"))document.getElementById("admin-game-new").checked=!!game?.isNew;
     if(document.getElementById("admin-game-featured"))document.getElementById("admin-game-featured").checked=!!game?.featured;
+    const msg=document.getElementById("admin-manage-message");
+    if(msg)msg.textContent=game?.custom ? "🛠️ دي لعبة مضافة من لوحة التحكم." : "📦 دي لعبة محلية من مجلد offline.";
 }
 function selectAdminGame(encodedName){
     const select=document.getElementById("admin-game-select");
@@ -1099,6 +1377,196 @@ function compressImageForFirestore(file, maxWidth=640, maxHeight=360, quality=0.
     });
 }
 
+
+function loadAdminDashboard(extraRows=[]){
+    const total=document.getElementById("stat-total-games");
+    const custom=document.getElementById("stat-custom-games");
+    const images=document.getElementById("stat-images");
+    const newest=document.getElementById("stat-new-games");
+    if(total)total.textContent=catalog.length;
+    if(custom)custom.textContent=catalog.filter(g=>g.custom).length;
+    if(images)images.textContent=catalog.filter(g=>!!g.image).length;
+    if(newest)newest.textContent=catalog.filter(g=>!!g.isNew).length;
+}
+function customGameId(name){const slug=normalizeDocText(name).slice(0,55)||"game";return "custom_"+slug+"_"+Date.now().toString(36);}
+function normalizeDocText(s){return String(s||"").trim().toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,"-").replace(/^-+|-+$/g,"");}
+function showCustomGameMessage(msg){const el=document.getElementById("custom-game-message");if(el)el.textContent=msg;}
+function getEditorCode(){return document.getElementById("new-game-code")?.value||"";}
+function setEditorCode(code){const el=document.getElementById("new-game-code");if(el)el.value=code||"";}
+function applyGameTemplate(){
+    const type=document.getElementById("new-game-template")?.value||"";
+    const templates={
+        clicker:'<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Arial;background:#071007;color:#fff;display:grid;place-items:center;min-height:100vh;margin:0}button{font-size:30px;padding:25px 35px;border:0;border-radius:20px;background:#00ff66;cursor:pointer}.score{font-size:28px;margin:20px}</style></head><body><div><h1>Matrix Clicker</h1><div class="score">النقاط: <span id="score">0</span></div><button onclick="score.textContent=+score.textContent+1">اضغط هنا 🖱️</button></div></body></html>',
+        dodge:'<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#050805;color:#fff;overflow:hidden;font-family:Arial}#player{position:fixed;bottom:30px;left:50%;width:55px;height:55px;background:#00ff66;border-radius:12px;transform:translateX(-50%)}#enemy{position:fixed;top:-60px;left:20%;width:45px;height:45px;background:#f43f5e;border-radius:10px}</style></head><body><div id="player"></div><div id="enemy"></div><script>let x=50;document.addEventListener("keydown",e=>{if(e.key==="ArrowLeft")x=Math.max(5,x-5);if(e.key==="ArrowRight")x=Math.min(95,x+5);player.style.left=x+"%"});setInterval(()=>{let y=parseInt(getComputedStyle(enemy).top);if(y>innerHeight){enemy.style.top="-60px";enemy.style.left=(10+Math.random()*80)+"%"}else enemy.style.top=(y+8)+"px"},30);</script></body></html>',
+        guess:'<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:Arial;background:#071007;color:#fff;display:grid;place-items:center;min-height:100vh;text-align:center}input,button{padding:12px;border-radius:10px;border:1px solid #315b38;margin:5px}button{background:#00ff66;font-weight:bold;cursor:pointer}</style></head><body><div><h1>خمن الرقم 🎯</h1><p>رقم من 1 إلى 20</p><input id="n" type="number"><button onclick="go()">تحقق</button><p id="m"></p></div><script>const target=Math.floor(Math.random()*20)+1;function go(){let n=+document.getElementById("n").value;document.getElementById("m").textContent=n===target?"🎉 صح!":"حاول تاني "+(n<target?"⬆️ أكبر":"⬇️ أصغر")}</script></body></html>',
+        runner:'<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;overflow:hidden;background:#071007;color:#fff;font-family:Arial}#hero{position:fixed;bottom:30px;left:80px;width:55px;height:55px;background:#00ff66;border-radius:14px}#obs{position:fixed;bottom:30px;right:-70px;width:45px;height:45px;background:#f43f5e;border-radius:12px}</style></head><body><div id="hero"></div><div id="obs"></div><script>let jump=false;document.addEventListener("keydown",e=>{if((e.key==="ArrowUp"||e.key===" ")&&!jump){jump=true;hero.style.bottom="130px";setTimeout(()=>{hero.style.bottom="30px";jump=false},500)}});setInterval(()=>{let r=parseInt(getComputedStyle(obs).right);obs.style.right=(r>innerWidth+50?-70:r+7)+"px"},30);</script></body></html>'
+    };
+    if(type&&templates[type])setEditorCode(templates[type]);
+}
+function loadHtmlFileIntoEditor(){
+    const input=document.getElementById("new-game-html-file");
+    const file=input?.files?.[0];
+    if(!file){showCustomGameMessage("اختَر ملف HTML أولاً.");return;}
+    const reader=new FileReader();
+    reader.onload=()=>{setEditorCode(String(reader.result||""));showCustomGameMessage("تم تحميل ملف HTML إلى المحرر ✅");};
+    reader.onerror=()=>showCustomGameMessage("تعذر قراءة الملف.");
+    reader.readAsText(file);
+}
+async function compressImageLoose(file,maxWidth=640,maxHeight=360,quality=.76){return compressImageForFirestore(file,maxWidth,maxHeight,quality);}
+function clearGameBuilder(){
+    ["new-game-name","new-game-code"].forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
+    ["new-game-image","new-game-bg-image","new-game-html-file"].forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
+    document.getElementById("new-game-category").value="أخرى";
+    document.getElementById("new-game-template").value="";
+    document.getElementById("new-game-bg-color").value="#050805";
+    document.getElementById("new-game-new").checked=true;
+    document.getElementById("new-game-featured").checked=false;
+    window.currentEditingGameId=null;
+    showCustomGameMessage("تم تفريغ محرر اللعبة.");
+}
+async function previewNewGame(){
+    const code=getEditorCode().trim();
+    if(!code){showCustomGameMessage("اكتب كود اللعبة أو اختر قالبًا أولاً.");return;}
+    const tmp={htmlCode:code,gameBackgroundColor:document.getElementById("new-game-bg-color")?.value||"#050805"};
+    const imgFile=document.getElementById("new-game-bg-image")?.files?.[0];
+    if(imgFile){try{tmp.gameBackgroundImage=await compressImageLoose(imgFile,900,500,.65);}catch(e){}}
+    const preview=document.getElementById("game-container");
+    document.getElementById("current-title").textContent=document.getElementById("new-game-name")?.value||"معاينة اللعبة";
+    showGameLoading();
+    document.getElementById("game-screen").style.display="block";
+    document.body.style.overflow="hidden";
+    preview.onload=hideGameLoading;
+    preview.removeAttribute("src");
+    preview.srcdoc=buildCustomGameDocument(tmp);
+}
+async function saveCustomGame(){
+    if(!currentUser||!db){showCustomGameMessage("سجل دخول الأدمن أولاً.");return;}
+    const name=document.getElementById("new-game-name")?.value.trim();
+    const code=getEditorCode().trim();
+    if(name.length<2){showCustomGameMessage("اكتب اسم اللعبة.");return;}
+    if(!code){showCustomGameMessage("اكتب كود اللعبة أو حمّل ملف HTML.");return;}
+    if(code.length>500000){showCustomGameMessage("كود اللعبة كبير جدًا. خليه أقل من 500 ألف حرف.");return;}
+    try{
+        const editingId=window.currentEditingGameId||"";
+        const existing=catalog.find(g=>g.name===name);
+        if(existing&&!editingId&&!existing.custom){showCustomGameMessage("الاسم موجود بالفعل ضمن الألعاب المحلية. استخدم اسمًا مختلفًا.");return;}
+        const imageFile=document.getElementById("new-game-image")?.files?.[0];
+        const bgFile=document.getElementById("new-game-bg-image")?.files?.[0];
+        let image=existing?.image||"";
+        let bgImage=existing?.gameBackgroundImage||"";
+        if(imageFile)image=await compressImageLoose(imageFile,640,360,.74);
+        if(bgFile)bgImage=await compressImageLoose(bgFile,900,500,.68);
+        if(image && image.length>650000){showCustomGameMessage("صورة اللعبة كبيرة بعد الضغط. اختَر صورة أصغر.");return;}
+        if(bgImage && bgImage.length>650000){showCustomGameMessage("صورة الخلفية كبيرة بعد الضغط. اختَر صورة أصغر.");return;}
+        const id=editingId||customGameId(name);
+        const payload={
+            name:name,custom:true,enabled:true,category:document.getElementById("new-game-category")?.value||"أخرى",
+            htmlCode:code,image:image,gameBackgroundColor:document.getElementById("new-game-bg-color")?.value||"#050805",
+            gameBackgroundImage:bgImage,isNew:!!document.getElementById("new-game-new")?.checked,
+            featured:!!document.getElementById("new-game-featured")?.checked,
+            updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:currentUser.uid
+        };
+        await db.collection("games").doc(id).set(payload,{merge:true});
+        window.currentEditingGameId=id;
+        showCustomGameMessage("تم حفظ ونشر اللعبة بنجاح ✅");
+        await reloadGames();await loadAdminGames();
+        switchAdminTab("manage-games");
+    }catch(e){console.error(e);showCustomGameMessage("تعذر نشر اللعبة: "+friendlyFirebaseError(e));}
+}
+async function loadSelectedGameIntoBuilder(){
+    const name=decodeURIComponent(document.getElementById("admin-game-select")?.value||"");
+    const game=catalog.find(g=>g.name===name);
+    if(!game?.custom){showCustomGameMessage("هذه لعبة محلية. محرر اللعبة يعمل مع الألعاب المضافة من لوحة التحكم.");switchAdminTab("add-game");return;}
+    switchAdminTab("add-game");
+    document.getElementById("new-game-name").value=game.name;
+    document.getElementById("new-game-category").value=game.category||"أخرى";
+    document.getElementById("new-game-new").checked=!!game.isNew;
+    document.getElementById("new-game-featured").checked=!!game.featured;
+    document.getElementById("new-game-bg-color").value=game.gameBackgroundColor||"#050805";
+    setEditorCode(game.htmlCode||"");
+    window.currentEditingGameId=game.id;
+    showCustomGameMessage("تم تحميل اللعبة إلى المحرر للتعديل ✅");
+}
+async function disableSelectedGame(){
+    if(!currentUser||!db)return;
+    const name=decodeURIComponent(document.getElementById("admin-game-select")?.value||"");
+    const game=catalog.find(g=>g.name===name);
+    if(!game?.custom){alert("الألعاب المحلية من مجلد offline لا يتم حذفها من هنا.");return;}
+    try{await db.collection("games").doc(game.id).set({enabled:false,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:currentUser.uid},{merge:true});alert("تم إخفاء اللعبة ✅");await reloadGames();await loadAdminGames();}
+    catch(e){alert("تعذر الإخفاء: "+friendlyFirebaseError(e));}
+}
+async function restoreSelectedGame(){
+    if(!currentUser||!db)return;
+    const name=decodeURIComponent(document.getElementById("admin-game-select")?.value||"");
+    const game=catalog.find(g=>g.name===name);
+    if(!game?.custom){alert("الألعاب المحلية تعمل من مجلد offline.");return;}
+    try{await db.collection("games").doc(game.id).set({enabled:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:currentUser.uid},{merge:true});alert("تمت إعادة تفعيل اللعبة ✅");await reloadGames();await loadAdminGames();}
+    catch(e){alert("تعذر التفعيل: "+friendlyFirebaseError(e));}
+}
+function settingsDefaults(){return {title:"Matrix Games",heroTitle:"Matrix Games",heroSubtitle:"عالم ماتريكس للألعاب — العب ألعابك مباشرة من مجلد offline",accentColor:"#00ff66",bgTop:"#060c06",bgBottom:"#010301",heroLogoSize:80,showCounter:true,showLogin:true,statusMessage:""};}
+async function loadSiteSettings(){
+    if(!db)return;
+    try{
+        const snap=await db.collection("games").doc("__site_settings__").get();
+        siteSettings=snap.exists?{...settingsDefaults(),...snap.data()}:settingsDefaults();
+        applySiteSettings();
+        loadSiteSettingsToForm();
+    }catch(e){console.warn("site settings:",e);}
+}
+function applySiteSettings(){
+    const logo=siteSettings.logo||"assets/matrix-logo-192.jpg";
+    document.querySelectorAll(".site-logo,#hero-logo").forEach(el=>{el.src=logo;});
+    const title=document.getElementById("hero-title");if(title)title.textContent=siteSettings.heroTitle||siteSettings.title||"Matrix Games";
+    const subtitle=document.getElementById("hero-subtitle");if(subtitle)subtitle.textContent=siteSettings.heroSubtitle||"";
+    const counter=document.getElementById("game-counter");if(counter)counter.style.display=siteSettings.showCounter===false?"none":"block";
+    const authBtn=document.getElementById("auth-btn-trigger");if(authBtn)authBtn.style.display=siteSettings.showLogin===false?"none":"inline-block";
+    document.title=(siteSettings.title||"Matrix Games")+" | عالم ماتريكس للألعاب";
+    let style=document.getElementById("site-custom-style");
+    if(!style){style=document.createElement("style");style.id="site-custom-style";document.head.appendChild(style);}
+    const accent=siteSettings.accentColor||"#00ff66";
+    style.textContent='body{background:radial-gradient(circle at top,'+(siteSettings.bgTop||"#060c06")+' 0%, '+(siteSettings.bgBottom||"#010301")+' 100%)}.top-header{border-bottom-color:'+accent+'}.logo-title,.hero h1,.admin-title,.section-head h3{color:'+accent+'}.hero-logo{width:'+Number(siteSettings.heroLogoSize||80)+'px;height:'+Number(siteSettings.heroLogoSize||80)+'px}.loading-spinner{border-top-color:'+accent+';border-right-color:'+accent+'}.category-chip.active,.auth-btn,.full-btn{background:'+accent+'}';
+}
+function loadSiteSettingsToForm(){
+    const s=siteSettings||settingsDefaults();
+    const set=(id,val)=>{const e=document.getElementById(id);if(e)e.value=val;};
+    set("site-title-input",s.title||"Matrix Games");
+    set("site-hero-title-input",s.heroTitle||"Matrix Games");
+    set("site-hero-subtitle-input",s.heroSubtitle||"عالم ماتريكس للألعاب");
+    set("site-accent-input",s.accentColor||"#00ff66");
+    set("site-bg-top-input",s.bgTop||"#060c06");
+    set("site-bg-bottom-input",s.bgBottom||"#010301");
+    set("site-hero-logo-size-input",Number(s.heroLogoSize||80));
+    set("site-counter-input",String(s.showCounter!==false));
+    set("site-login-button-input",String(s.showLogin!==false));
+    set("site-status-message-input",s.statusMessage||"");
+    const rv=document.getElementById("site-hero-logo-size-value");if(rv)rv.textContent=Number(s.heroLogoSize||80)+"px";
+}
+async function saveSiteSettings(){
+    if(!currentUser||!db)return;
+    try{
+        let logo=siteSettings.logo||"";
+        const file=document.getElementById("site-logo-input")?.files?.[0];
+        if(file)logo=await compressImageLoose(file,500,500,.78);
+        siteSettings={...settingsDefaults(),...siteSettings,
+            title:document.getElementById("site-title-input")?.value.trim()||"Matrix Games",
+            heroTitle:document.getElementById("site-hero-title-input")?.value.trim()||"Matrix Games",
+            heroSubtitle:document.getElementById("site-hero-subtitle-input")?.value.trim()||"",
+            accentColor:document.getElementById("site-accent-input")?.value||"#00ff66",
+            bgTop:document.getElementById("site-bg-top-input")?.value||"#060c06",
+            bgBottom:document.getElementById("site-bg-bottom-input")?.value||"#010301",
+            heroLogoSize:Number(document.getElementById("site-hero-logo-size-input")?.value||80),
+            showCounter:document.getElementById("site-counter-input")?.value!=="false",
+            showLogin:document.getElementById("site-login-button-input")?.value!=="false",
+            statusMessage:document.getElementById("site-status-message-input")?.value.trim()||""};
+        if(logo&&logo.length>700000){alert("لوجو الموقع كبير. اختَر صورة أصغر.");return;}
+        if(logo)siteSettings.logo=logo;
+        await db.collection("games").doc("__site_settings__").set(siteSettings,{merge:true});
+        applySiteSettings();
+        const msg=document.getElementById("design-message");if(msg)msg.textContent="تم حفظ تصميم وإعدادات الموقع ✅";
+        const msg2=document.getElementById("settings-message");if(msg2)msg2.textContent="تم حفظ إعدادات الموقع ✅";
+    }catch(e){console.error(e);alert("تعذر حفظ الإعدادات: "+friendlyFirebaseError(e));}
+}
+function resetSiteSettings(){siteSettings=settingsDefaults();applySiteSettings();loadSiteSettingsToForm();}
 async function uploadSelectedGameImage(){
     if(!currentUser || !db){alert("سجل الدخول أولاً.");return;}
     const select=document.getElementById("admin-game-select");
@@ -1163,22 +1631,24 @@ async function reloadGames(){
     buildBaseCatalog();
     if(db){
         try{
-            // اقرأ كل مستندات الألعاب المحفوظة حتى لا تختفي الصور القديمة
-            // إذا كان مستند قديم لا يحتوي على enabled.
             const snap=await db.collection("games").get();
             snap.forEach(doc=>{
                 const g=doc.data();
-                if(g.name && g.enabled !== false){
-                    const index=catalog.findIndex(x=>x.name===g.name);
-                    if(index>=0) catalog[index]={...catalog[index],...g};
-                    else catalog.push({id:doc.id,name:g.name,image:g.image||"",source:"firestore"});
+                if(!g.name)return;
+                const index=catalog.findIndex(x=>x.name===g.name);
+                if(index>=0){
+                    if(g.enabled!==false || !g.custom)catalog[index]={...catalog[index],...g,id:doc.id};
+                }else if(g.enabled!==false){
+                    catalog.push({id:doc.id,name:g.name,image:g.image||"",source:"firestore",custom:!!g.custom,...g});
                 }
             });
         }catch(e){console.warn("Firestore games:",e)}
     }
+    await loadSiteSettings();
     renderCategoryBar();
     renderHomeSections();
     renderGames();
+    loadAdminDashboard();
 }
 
 /* =========================================================
@@ -1186,11 +1656,12 @@ async function reloadGames(){
 ========================================================= */
 buildBaseCatalog();
 favoriteGames=new Set(getLocalFavorites());
+applySiteSettings();
 renderCategoryBar();
 renderHomeSections();
 renderGames();
 
-// تحميل الصور المخصصة المحفوظة من Firestore تلقائيًا عند فتح الموقع.
+// تحميل الألعاب والإعدادات المخصصة من Firestore تلقائيًا عند فتح الموقع.
 if(firebaseReady){
     reloadGames().catch(err=>console.warn("Initial Firestore games load:",err));
 }
