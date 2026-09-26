@@ -111,8 +111,34 @@ body{
 }
 .btn{padding:12px 25px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px}
 .back-btn{background:#f43f5e;color:#fff}.full-btn{background:#00ff66;color:#010301}
-.iframe-container{width:100%;height:calc(100vh - 65px);background:#000}
+.iframe-container{width:100%;height:calc(100vh - 65px);background:#000;position:relative}
 iframe{width:100%;height:100%;border:none}
+.game-loading{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at center,#071107 0%,#000 70%);
+    z-index:5;opacity:1;visibility:visible;transition:opacity .3s ease,visibility .3s ease;
+}
+.game-loading.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.loading-box{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    padding:28px 35px;min-width:280px;border:1px solid rgba(0,255,102,.25);
+    border-radius:18px;background:rgba(3,10,3,.86);box-shadow:0 0 30px rgba(0,255,102,.12);
+}
+.loading-spinner{
+    width:58px;height:58px;border-radius:50%;border:5px solid #173217;
+    border-top-color:#00ff66;border-right-color:#00ff66;
+    animation:matrixSpin .9s linear infinite;
+}
+.loading-title{color:#00ff66;font-size:18px;font-weight:800}
+.loading-sub{color:#9bb39b;font-size:13px}
+.loading-dots::after{
+    content:"";display:inline-block;width:1.2em;text-align:left;
+    animation:loadingDots 1.3s steps(4,end) infinite;
+}
+@keyframes matrixSpin{to{transform:rotate(360deg)}}
+@keyframes loadingDots{
+    0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}100%{content:""}
+}
 
 @media(max-width:800px){
     .top-header{flex-direction:column;padding:12px}
@@ -177,6 +203,13 @@ iframe{width:100%;height:100%;border:none}
         <button class="btn full-btn" onclick="goFull()">ملء الشاشة ⛶</button>
     </div>
     <div class="iframe-container">
+        <div id="game-loading" class="game-loading">
+            <div class="loading-box">
+                <div class="loading-spinner"></div>
+                <div class="loading-title">جاري تحميل اللعبة<span class="loading-dots"></span></div>
+                <div class="loading-sub">استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮</div>
+            </div>
+        </div>
         <iframe id="game-container" src="" allowfullscreen></iframe>
     </div>
 </div>
@@ -625,17 +658,35 @@ function filterGames(){
 /* =========================================================
    5) تشغيل اللعبة
 ========================================================= */
+function showGameLoading(){
+    const loading=document.getElementById("game-loading");
+    if(loading) loading.classList.remove("hidden");
+}
+
+function hideGameLoading(){
+    const loading=document.getElementById("game-loading");
+    if(loading) loading.classList.add("hidden");
+}
+
 function openGame(encodedName){
     const name=decodeURIComponent(encodedName);
     const url=gameUrl(name);
+    const iframe=document.getElementById("game-container");
+
     document.getElementById("current-title").textContent=prettyName(name);
-    document.getElementById("game-container").src=url;
+    showGameLoading();
     document.getElementById("game-screen").style.display="block";
     document.body.style.overflow="hidden";
+
+    iframe.onload=hideGameLoading;
+    iframe.src=url;
+
     saveGameActivity(name);
 }
 function closeGame(){
-    document.getElementById("game-container").src="";
+    const iframe=document.getElementById("game-container");
+    iframe.src="";
+    hideGameLoading();
     document.getElementById("game-screen").style.display="none";
     document.body.style.overflow="";
 }
