@@ -254,6 +254,12 @@ iframe{width:100%;height:100%;border:none}
                         <button onclick="reloadGames();loadAdminDashboard()">🔄 تحديث البيانات</button>
                     </div>
                     <div class="admin-panel-card">
+                        <h3>🖼️ إنشاء صور الألعاب الناقصة</h3>
+                        <p class="admin-help">الزر ده بيصمم صور Poster تلقائيًا للألعاب التي ليس لها صورة، ويحفظها في Firestore. الصور الموجودة بالفعل لن تتأثر.</p>
+                        <button class="auth-btn" onclick="generateMissingGameImages()">⚡ إنشاء كل الصور الناقصة</button>
+                        <div id="image-generation-status" class="admin-message"></div>
+                    </div>
+                    <div class="admin-panel-card">
                         <h3>🚀 ماذا تقدر تعمل؟</h3>
                         <div class="admin-feature-list">
                             <div>✅ إضافة لعبة HTML من ملف أو من المحرر</div>
@@ -1293,7 +1299,10 @@ async function checkAdmin(uid){
     }
     document.getElementById("admin-panel-btn").style.display=isAdmin?"inline-block":"none";
     if(!isAdmin) document.getElementById("admin-panel").style.display="none";
-    if(isAdmin) loadAdminGames();
+    if(isAdmin){
+        loadAdminGames();
+        setTimeout(()=>generateMissingGameImages(),700);
+    }
 }
 
 function toggleAdminPanelVisibility(){
@@ -1383,6 +1392,93 @@ function compressImageForFirestore(file, maxWidth=640, maxHeight=360, quality=0.
 }
 
 
+
+function svgEscape(text){
+    return String(text||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function gameHash(name){
+    let h=2166136261;
+    for(let i=0;i<String(name).length;i++){h^=String(name).charCodeAt(i);h=Math.imul(h,16777619);}
+    return h>>>0;
+}
+function generatedGamePoster(name,category){
+    const h=gameHash(name);
+    const palettes=[
+        ["#03140a","#00ff66","#8affc1"],["#07122a","#24b7ff","#b8e7ff"],["#1b0a2e","#bb6cff","#ffd3ff"],
+        ["#2a0a0a","#ff4d6d","#ffd1d9"],["#211707","#ffb000","#ffe7a8"],["#071b20","#11d9c5","#b8fff7"]
+    ];
+    const p=palettes[h%palettes.length];
+    const angle=h%360;
+    const shape=(h%4===0
+        ? '<circle cx="510" cy="78" r="48" fill="'+p[1]+'" opacity=".14"/><circle cx="510" cy="78" r="30" fill="none" stroke="'+p[2]+'" stroke-width="3" opacity=".65"/>'
+        : h%4===1
+        ? '<path d="M445 20 L610 20 L545 150 L385 150 Z" fill="'+p[1]+'" opacity=".12"/><path d="M485 35 L570 35 L535 110 L450 110 Z" fill="none" stroke="'+p[2]+'" stroke-width="3" opacity=".6"/>'
+        : h%4===2
+        ? '<polygon points="530,15 620,70 555,140 465,85" fill="'+p[1]+'" opacity=".13"/><polygon points="530,35 590,72 550,115 490,78" fill="none" stroke="'+p[2]+'" stroke-width="3" opacity=".62"/>'
+        : '<path d="M410 30 Q520 0 630 30 L630 130 Q520 100 410 130 Z" fill="'+p[1]+'" opacity=".11"/><path d="M430 45 Q520 20 610 45" fill="none" stroke="'+p[2]+'" stroke-width="3" opacity=".62"/>');
+    const size=14+((h>>>8)%10);
+    const title=svgEscape(prettyName(name)).slice(0,42);
+    const cat=svgEscape(category||"أخرى").slice(0,24);
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">'+
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="'+p[0]+'"/><stop offset="100%" stop-color="#010301"/></linearGradient>'+
+        '<filter id="glow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>'+
+        '<rect width="640" height="360" rx="28" fill="url(#g)"/>'+
+        '<g transform="rotate('+angle+' 320 180)" opacity=".35"><path d="M0 280 L240 40 L640 160" fill="none" stroke="'+p[1]+'" stroke-width="2"/><path d="M40 340 L300 10 L640 280" fill="none" stroke="'+p[2]+'" stroke-width="1.5"/></g>'+
+        '<rect x="14" y="14" width="612" height="332" rx="24" fill="none" stroke="'+p[1]+'" stroke-width="2" opacity=".75"/>'+
+        shape+
+        '<g filter="url(#glow)"><text x="38" y="52" fill="'+p[2]+'" font-family="Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="2">MATRIX GAMES</text></g>'+
+        '<text x="38" y="125" fill="#ffffff" font-family="Arial,sans-serif" font-size="'+size*2+'" font-weight="900">'+title.replace(/&quot;/g,"&amp;quot;")+'</text>'+
+        '<rect x="38" y="150" width="155" height="30" rx="15" fill="'+p[1]+'" opacity=".16"/>'+
+        '<text x="116" y="171" text-anchor="middle" fill="'+p[2]+'" font-family="Arial,sans-serif" font-size="13" font-weight="700">'+cat+'</text>'+
+        '<text x="38" y="318" fill="#86a68e" font-family="Arial,sans-serif" font-size="11">PLAY NOW • MATRIX GAMES</text>'+
+        '</svg>';
+    return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(svg);
+}
+async function generateMissingGameImages(){
+    const status=document.getElementById("image-generation-status");
+    if(!currentUser||!db){if(status)status.textContent="سجل الدخول بحساب الأدمن أولاً.";return;}
+    if(status)status.textContent="جاري فحص صور الألعاب الحالية...";
+    try{
+        const snap=await db.collection("games").get();
+        const existing={};
+        snap.forEach(d=>{const g=d.data(); if(g.name)existing[g.name]={id:d.id,...g};});
+        const missing=gameFiles.filter(name=>!existing[name]?.image);
+        if(!missing.length){
+            if(status)status.textContent="كل الألعاب لها صور بالفعل ✅";
+            loadAdminDashboard();
+            return;
+        }
+        const total=missing.length;
+        let done=0;
+        const batchSize=450;
+        for(let i=0;i<missing.length;i+=batchSize){
+            const batch=db.batch();
+            const chunk=missing.slice(i,i+batchSize);
+            chunk.forEach(name=>{
+                const category=getGameCategory(existing[name]||{name});
+                const ref=db.collection("games").doc(name);
+                batch.set(ref,{
+                    name,
+                    image:generatedGamePoster(name,category),
+                    imageType:"generated",
+                    source:"generated",
+                    enabled:existing[name]?.enabled!==false,
+                    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedBy:currentUser.uid
+                },{merge:true});
+            });
+            await batch.commit();
+            done+=chunk.length;
+            if(status)status.textContent="تم إنشاء وحفظ "+done+" من "+total+" صورة ✅";
+        }
+        await reloadGames();
+        await loadAdminGames();
+        if(status)status.textContent="خلصنا ✅ تم إنشاء "+total+" صورة جديدة، والصور القديمة لم يتم تغييرها.";
+    }catch(e){
+        console.error("generateMissingGameImages",e);
+        if(status)status.textContent="حصل خطأ أثناء إنشاء الصور: "+friendlyFirebaseError(e);
+    }
+}
 function loadAdminDashboard(extraRows=[]){
     const total=document.getElementById("stat-total-games");
     const custom=document.getElementById("stat-custom-games");
