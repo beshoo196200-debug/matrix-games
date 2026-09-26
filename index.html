@@ -690,11 +690,52 @@ function closeGame(){
     document.getElementById("game-screen").style.display="none";
     document.body.style.overflow="";
 }
-function goFull(){
-    const box=document.getElementById("game-screen");
-    if(document.fullscreenElement) document.exitFullscreen();
-    else box.requestFullscreen?.();
+async function requestLandscape(){
+    try{
+        if(screen.orientation?.lock){
+            await screen.orientation.lock("landscape");
+        }
+    }catch(e){
+        console.info("Landscape lock is not supported:",e);
+    }
 }
+
+function unlockOrientation(){
+    try{
+        screen.orientation?.unlock?.();
+    }catch(e){}
+}
+
+async function toggleLandscape(){
+    const box=document.getElementById("game-screen");
+    try{
+        if(!document.fullscreenElement){
+            await box.requestFullscreen?.();
+        }
+        await requestLandscape();
+    }catch(e){
+        console.warn("Landscape mode:",e);
+    }
+}
+
+async function goFull(){
+    const box=document.getElementById("game-screen");
+    try{
+        if(document.fullscreenElement){
+            document.exitFullscreen();
+            unlockOrientation();
+        }else{
+            await box.requestFullscreen?.();
+            await requestLandscape();
+        }
+    }catch(e){
+        console.warn("Fullscreen:",e);
+    }
+}
+
+document.addEventListener("fullscreenchange",()=>{
+    if(!document.fullscreenElement) unlockOrientation();
+});
 
 /* =========================================================
    6) تسجيل الدخول وإنشاء الحساب
