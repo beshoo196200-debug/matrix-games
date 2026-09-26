@@ -953,9 +953,10 @@ function gameCardHtml(game){
     </div>`;
 }
 function renderGames(list=catalog){
+    const visible=(list||catalog).filter(g=>g.enabled!==false);
     const grid=document.getElementById("main-grid");
-    grid.innerHTML=list.length?list.map(game=>gameCardHtml(game)).join(""):'<div class="no-games">لا توجد ألعاب مطابقة 🔎</div>';
-    document.getElementById("game-counter").textContent=`عدد الألعاب المعروضة: ${list.length} | إجمالي الكتالوج: ${catalog.length}`;
+    grid.innerHTML=visible.length?visible.map(game=>gameCardHtml(game)).join(""):'<div class="no-games">لا توجد ألعاب مطابقة 🔎</div>';
+    document.getElementById("game-counter").textContent=`عدد الألعاب المعروضة: ${visible.length} | إجمالي الكتالوج: ${catalog.filter(g=>g.enabled!==false).length}`;
 }
 function renderCategoryBar(){
     const bar=document.getElementById("category-bar");if(!bar)return;
@@ -965,7 +966,7 @@ function renderCategoryBar(){
 function selectCategory(category){
     selectedCategory=category;
     const q=document.getElementById("search-input").value.trim().toLowerCase();
-    let list=catalog;
+    let list=catalog.filter(g=>g.enabled!==false);
     if(category!=="الكل")list=list.filter(g=>getGameCategory(g)===category);
     if(q)list=list.filter(g=>g.name.toLowerCase().includes(q)||prettyName(g.name).toLowerCase().includes(q));
     document.getElementById("home-sections").style.display="none";
@@ -973,9 +974,10 @@ function selectCategory(category){
 }
 function renderHomeSections(){
     const box=document.getElementById("home-sections");if(!box)return;
-    const favorites=catalog.filter(g=>favoriteGames.has(g.name));
-    const most=sortMostPlayed(catalog).slice(0,8);
-    const newest=catalog.filter(g=>g.isNew===true).slice(0,8);
+    const visibleCatalog=catalog.filter(g=>g.enabled!==false);
+    const favorites=visibleCatalog.filter(g=>favoriteGames.has(g.name));
+    const most=sortMostPlayed(visibleCatalog).slice(0,8);
+    const newest=visibleCatalog.filter(g=>g.isNew===true).slice(0,8);
     const section=(title,items,emptyText)=>'<section class="home-section"><div class="section-head"><h3>'+title+'</h3>'+(items.length?'<button onclick="showAllFromSection()">عرض الكل</button>':'')+'</div>'+(items.length?'<div class="section-grid">'+items.map(game=>gameCardHtml(game)).join("")+'</div>':'<div class="empty-section">'+emptyText+'</div>')+'</section>';
     box.innerHTML=section("🔥 الأكثر تشغيلًا لديك",most,"ابدأ بلعب الألعاب، وستظهر هنا الأكثر تشغيلًا على جهازك.")+section("🆕 ألعاب جديدة",newest,"الأدمن يقدر يحدد الألعاب الجديدة من لوحة التحكم.")+section("❤️ المفضلة",favorites,"اضغط ⭐ على أي لعبة لإضافتها للمفضلة.");
     box.style.display="block";renderCategoryBar();
@@ -992,7 +994,7 @@ function toggleFavorite(encodedName,event){
 
 function filterGames(){
     const q=document.getElementById("search-input").value.trim().toLowerCase();
-    let filtered=catalog.filter(g=>g.name.toLowerCase().includes(q)||prettyName(g.name).toLowerCase().includes(q));
+    let filtered=catalog.filter(g=>g.enabled!==false && (g.name.toLowerCase().includes(q)||prettyName(g.name).toLowerCase().includes(q)));
     if(selectedCategory!=="الكل")filtered=filtered.filter(g=>getGameCategory(g)===selectedCategory);
     document.getElementById("home-sections").style.display=q?"none":"block";
     renderCategoryBar();renderGames(filtered);
@@ -1637,9 +1639,9 @@ async function reloadGames(){
                 if(!g.name)return;
                 const index=catalog.findIndex(x=>x.name===g.name);
                 if(index>=0){
-                    if(g.enabled!==false || !g.custom)catalog[index]={...catalog[index],...g,id:doc.id};
-                }else if(g.enabled!==false){
-                    catalog.push({id:doc.id,name:g.name,image:g.image||"",source:"firestore",custom:!!g.custom,...g});
+                    catalog[index]={...catalog[index],...g,id:doc.id};
+                }else{
+                    catalog.push({id:doc.id,name:g.name,image:g.image||"",source:"firestore",custom:!!g,...g});
                 }
             });
         }catch(e){console.warn("Firestore games:",e)}
