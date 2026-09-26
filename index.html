@@ -982,6 +982,11 @@ async function reloadGames(){
 buildBaseCatalog();
 renderGames();
 
+// تحميل الصور المخصصة المحفوظة من Firestore تلقائيًا عند فتح الموقع.
+if(firebaseReady){
+    reloadGames().catch(err=>console.warn("Initial Firestore games load:",err));
+}
+
 if(firebaseReady){
     auth.onAuthStateChanged(user=>{
         loadUserProfile(user).catch(console.error);
