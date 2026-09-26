@@ -1161,10 +1161,12 @@ async function reloadGames(){
     buildBaseCatalog();
     if(db){
         try{
-            const snap=await db.collection("games").where("enabled","==",true).get();
+            // اقرأ كل مستندات الألعاب المحفوظة حتى لا تختفي الصور القديمة
+            // إذا كان مستند قديم لا يحتوي على enabled.
+            const snap=await db.collection("games").get();
             snap.forEach(doc=>{
                 const g=doc.data();
-                if(g.name){
+                if(g.name && g.enabled !== false){
                     const index=catalog.findIndex(x=>x.name===g.name);
                     if(index>=0) catalog[index]={...catalog[index],...g};
                     else catalog.push({id:doc.id,name:g.name,image:g.image||"",source:"firestore"});
