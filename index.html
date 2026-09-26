@@ -178,6 +178,8 @@ iframe{width:100%;height:100%;border:none}
 }
 
 .hero-brand{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap}
+#admin-panel{max-width:1250px;width:calc(100% - 30px);text-align:right;border-color:#1bff78;background:#081208;padding:20px}
+.site-status-message{min-height:0;margin:12px auto 0;color:#ffdf70;font-weight:700;font-size:13px}
 .hero-logo{width:80px;height:80px;object-fit:cover;border-radius:20px;border:2px solid rgba(0,255,102,.4);box-shadow:0 0 28px rgba(0,255,102,.28);background:#060c06}
 .admin-shell{width:100%}.admin-topbar{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:20px}.admin-kicker{font-size:11px;letter-spacing:2px;color:#7ea77e;font-weight:800}.admin-close-btn{background:#142414;color:#fff;border:1px solid #315b38;border-radius:10px;padding:10px 14px;cursor:pointer}.admin-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.admin-stat{background:#071207;border:1px solid #1b321f;border-radius:16px;padding:15px;text-align:center}.admin-stat span{display:block;font-size:22px}.admin-stat b{display:block;font-size:25px;color:#00ff66;margin:4px 0}.admin-stat small{color:#779077}.admin-layout{display:grid;grid-template-columns:210px 1fr;gap:16px;direction:ltr}.admin-sidebar{background:#071207;border:1px solid #1b321f;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;direction:rtl}.admin-nav{width:100%;padding:12px;border:1px solid transparent;background:transparent;color:#a3bfa3;border-radius:10px;text-align:right;cursor:pointer;font-weight:800}.admin-nav:hover,.admin-nav.active{background:#102011;border-color:#24462b;color:#00ff66}.admin-content{min-width:0;direction:rtl}.admin-tab{display:none}.admin-tab.active{display:block}.admin-panel-card{background:#071207;border:1px solid #1b321f;border-radius:16px;padding:18px;margin-bottom:14px}.admin-panel-card h3{margin:0 0 10px;color:#00ff66}.admin-feature-list{display:grid;gap:8px;color:#a3bfa3;text-align:right}.admin-quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}.admin-quick-grid button{padding:14px;background:#102011;color:#dfffe8;border:1px solid #2b5031;border-radius:12px;cursor:pointer;font-weight:800}.admin-form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.admin-form-wide{grid-column:1/-1}.admin-label{display:block;color:#a3bfa3;font-size:12px;margin:0 0 4px;font-weight:700}.admin-color-input{width:100%;height:46px;border-radius:8px;border:1px solid #1b321f;background:#060c06;padding:4px}.range-value{color:#00ff66;font-weight:700;font-size:12px}.code-editor{width:100%;min-height:360px;background:#020602;border:1px solid #234528;border-radius:12px;color:#d9ffdf;padding:15px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.55;direction:ltr;text-align:left;resize:vertical;outline:none}.code-editor:focus{border-color:#00ff66;box-shadow:0 0 12px rgba(0,255,102,.12)}.admin-upload-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.admin-inline-btn{height:46px}.admin-checks-left{justify-content:flex-start}.admin-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.admin-action-btn{width:100%;padding:13px;border-radius:8px;font-weight:bold;cursor:pointer}.admin-message{min-height:22px;margin-top:10px;color:#ffdf70;font-size:13px}.admin-games{margin-top:10px;max-height:420px;overflow:auto;border:1px solid #142414;border-radius:12px}.admin-game-row{padding:10px 12px!important}.admin-game-row span{flex:1;text-align:right}.admin-game-row button{white-space:nowrap}.danger-btn{background:#f43f5e!important;color:#fff!important;border:0}.admin-stat:first-child b{}
 @media(max-width:900px){.admin-layout{grid-template-columns:1fr}.admin-sidebar{display:grid;grid-template-columns:repeat(2,1fr)}.admin-stat-grid{grid-template-columns:repeat(2,1fr)}}
@@ -188,7 +190,7 @@ iframe{width:100%;height:100%;border:none}
 <body>
 
 <div class="top-header">
-    <div class="logo-title"><img class="site-logo" src="assets/matrix-logo-192.jpg" alt="Matrix Games"><span>MATRIX GAMES</span></div>
+    <div class="logo-title"><img class="site-logo" src="assets/matrix-logo-192.jpg" alt="Matrix Games"><span id="header-site-title">MATRIX GAMES</span></div>
     <div class="header-actions">
         <input type="text" id="search-input" class="search-box"
                placeholder="🔍 ابحث عن ألعاب ماتريكس..." oninput="filterGames()">
@@ -207,6 +209,7 @@ iframe{width:100%;height:100%;border:none}
         <h1 id="hero-title">Matrix Games</h1>
     </div>
     <p id="hero-subtitle">عالم ماتريكس للألعاب — العب ألعابك مباشرة من مجلد offline</p>
+    <div id="site-status-message" class="site-status-message"></div>
     <div class="counter" id="game-counter">جاري تحميل الألعاب...</div>
 </div>
 
@@ -1520,6 +1523,8 @@ function applySiteSettings(){
     document.querySelectorAll(".site-logo,#hero-logo").forEach(el=>{el.src=logo;});
     const title=document.getElementById("hero-title");if(title)title.textContent=siteSettings.heroTitle||siteSettings.title||"Matrix Games";
     const subtitle=document.getElementById("hero-subtitle");if(subtitle)subtitle.textContent=siteSettings.heroSubtitle||"";
+    const headerTitle=document.getElementById("header-site-title");if(headerTitle)headerTitle.textContent=(siteSettings.title||"Matrix Games").toUpperCase();
+    const status=document.getElementById("site-status-message");if(status){status.textContent=siteSettings.statusMessage||"";status.style.display=siteSettings.statusMessage?"block":"none";}
     const counter=document.getElementById("game-counter");if(counter)counter.style.display=siteSettings.showCounter===false?"none":"block";
     const authBtn=document.getElementById("auth-btn-trigger");if(authBtn)authBtn.style.display=siteSettings.showLogin===false?"none":"inline-block";
     document.title=(siteSettings.title||"Matrix Games")+" | عالم ماتريكس للألعاب";
