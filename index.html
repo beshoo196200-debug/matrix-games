@@ -133,6 +133,10 @@ body{
     background:#060c06;padding:10px 25px;border-bottom:2px solid #00ff66;height:65px
 }
 .btn{padding:12px 25px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px}
+.game-controls-right{display:flex;align-items:center;gap:8px}
+.save-btn{background:#ffd54a;color:#151000}
+.save-btn:disabled{opacity:.55;cursor:wait}
+.game-save-status{position:absolute;top:72px;right:20px;z-index:6;padding:8px 12px;border-radius:10px;background:rgba(3,10,3,.9);color:#9fffb8;border:1px solid rgba(0,255,102,.22);font-size:12px;display:none}
 .back-btn{background:#f43f5e;color:#fff}.full-btn{background:#00ff66;color:#010301}
 .iframe-container{width:100%;height:calc(100vh - 65px);background:#000;position:relative}
 iframe{width:100%;height:100%;border:none}
@@ -459,7 +463,7 @@ iframe{width:100%;height:100%;border:none}
                             <button onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆️ أعلى الصفحة</button>
                             <button onclick="openAuthModal()">👤 اختبار تسجيل الدخول</button>
                         </div>
-                        <p class="admin-help">ملاحظة: قواعد Firestore الحالية هي التي تحمي عمليات الكتابة. بيانات إعدادات الشكل العامة ليست أسرارًا لأنها تُقرأ من الموقع.</p>
+                        <p class="admin-help">ملاحظة: حفظ تقدم الألعاب يحتاج سماحًا للمستخدم بقراءة وكتابة المسار users/{uid}/gameSaves/{gameId} في Firestore Rules. بيانات إعدادات الشكل العامة ليست أسرارًا لأنها تُقرأ من الموقع.</p>
                     </div>
                 </section>
             </main>
@@ -478,9 +482,13 @@ iframe{width:100%;height:100%;border:none}
     <div class="control-bar">
         <button class="btn back-btn" onclick="closeGame()">◄ خروج ورجوع</button>
         <h2 id="current-title">اسم اللعبة</h2>
-        <button class="btn full-btn" onclick="goFull()">ملء الشاشة ⛶</button>
+        <div class="game-controls-right">
+            <button id="game-save-btn" class="btn save-btn" onclick="saveCurrentGameProgress()">💾 حفظ التقدم</button>
+            <button class="btn full-btn" onclick="goFull()">ملء الشاشة ⛶</button>
+        </div>
     </div>
     <div class="iframe-container">
+        <div id="game-save-status" class="game-save-status"></div>
         <div id="game-loading" class="game-loading">
             <div class="loading-box">
                 <div class="loading-spinner"></div>
@@ -498,6 +506,7 @@ iframe{width:100%;height:100%;border:none}
 
         <div id="login-panel">
             <h3 style="color:#00ff66;margin-top:0">تسجيل دخول عالم ماتريكس</h3>
+            <div style="color:#9bb39b;font-size:12px;line-height:1.6;margin-bottom:8px">بعد تسجيل الدخول، الموقع يحاول حفظ تقدم الألعاب المرتبط بحسابك تلقائيًا.</div>
             <input type="text" id="login-user" class="auth-input" placeholder="البريد الإلكتروني أو اسم المستخدم">
             <input type="password" id="login-pass" class="auth-input" placeholder="كلمة المرور السرية">
             <button class="auth-btn" onclick="loginPlayer()">دخول السيرفر 🎮</button>
@@ -880,6 +889,13 @@ let currentUser = null;
 let currentProfile = null;
 let favoriteGames = new Set();
 let selectedCategory = "الكل";
+let activeGameName = null;
+let activeGameId = null;
+let activeGameLocalBaseline = null;
+let activeGameSessionBaseline = null;
+let activeGameExplicitState = null;
+let activeGameSaveTimer = null;
+let activeGameLastSavedSignature = "";
 let siteSettings = {
     title:"Matrix Games",
     heroTitle:"Matrix Games",
@@ -1028,20 +1044,172 @@ function buildCustomGameDocument(game){
     const bgColor=game.gameBackgroundColor||"#050805";
     const bgImage=game.gameBackgroundImage||"";
     const extra='<style id="matrix-game-background">html,body{margin:0!important;min-height:100%!important;}body{background:'+(bgImage?'url("'+bgImage+'") center/cover fixed no-repeat, ':'')+bgColor+'!important;}</style>';
-    if(/<\/head>/i.test(source)) return source.replace(/<\/head>/i,extra+"</head>");
-    return "<!doctype html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'>"+extra+"</head><body>"+source+"</body></html>";
+    const bridge='<scr'+'ipt>(function(){window.MATRIX_GAME_SAVE={getState:function(){try{var raw=localStorage.getItem("__MATRIX_GAME_STATE__");return raw?JSON.parse(raw):null}catch(e){return null}},setState:function(state){try{localStorage.setItem("__MATRIX_GAME_STATE__",JSON.stringify(state||{}));window.parent.postMessage({type:"MATRIX_GAME_EXPLICIT_SAVE",state:state||{}},window.location.origin)}catch(e){console.warn(e)}},clearState:function(){try{localStorage.removeItem("__MATRIX_GAME_STATE__");window.parent.postMessage({type:"MATRIX_GAME_EXPLICIT_SAVE",state:null},window.location.origin)}catch(e){}}};})();</scr'+'ipt>';
+    const full=extra+bridge;
+    if(/<\/head>/i.test(source)) return source.replace(/<\/head>/i,full+"</head>");
+    return "<!doctype html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'>"+full+"</head><body>"+source+"</body></html>";
 }
-function openGame(encodedName){
+function storageSafeKeys(){
+    return ["matrixGamePlayCounts","matrixGameFavorites"];
+}
+function shouldSaveStorageKey(key){
+    if(storageSafeKeys().includes(key))return false;
+    if(/^firebase/i.test(key))return false;
+    if(/^firebaseLocalStorage/i.test(key))return false;
+    if(/^google/i.test(key))return false;
+    if(key==="__MATRIX_GAME_STATE__")return false;
+    return true;
+}
+function captureStorage(storage){
+    const out={};
+    try{
+        for(let i=0;i<storage.length;i++){
+            const key=storage.key(i);
+            if(key!==null && shouldSaveStorageKey(key))out[key]=storage.getItem(key);
+        }
+    }catch(e){}
+    return out;
+}
+function storageDiff(before,after){
+    const diff={};
+    const keys=new Set([...Object.keys(before||{}),...Object.keys(after||{})]);
+    keys.forEach(key=>{
+        if((before||{})[key]!== (after||{})[key]) diff[key]=Object.prototype.hasOwnProperty.call(after||{},key)?after[key]:null;
+    });
+    return diff;
+}
+function applyStorageDiff(storage,diff){
+    try{
+        Object.entries(diff||{}).forEach(([key,value])=>{
+            if(!shouldSaveStorageKey(key))return;
+            if(value===null)storage.removeItem(key);else storage.setItem(key,value);
+        });
+    }catch(e){console.warn("applyStorageDiff:",e)}
+}
+function restoreStorageBaseline(){
+    if(!activeGameLocalBaseline && !activeGameSessionBaseline)return;
+    try{
+        const currentLocal=captureStorage(window.localStorage);
+        const currentSession=captureStorage(window.sessionStorage);
+        const localRestore=storageDiff(currentLocal,activeGameLocalBaseline||{});
+        const sessionRestore=storageDiff(currentSession,activeGameSessionBaseline||{});
+        applyStorageDiff(window.localStorage,localRestore);
+        applyStorageDiff(window.sessionStorage,sessionRestore);
+        localStorage.removeItem("__MATRIX_GAME_STATE__");
+    }catch(e){console.warn("restoreStorageBaseline:",e)}
+    activeGameLocalBaseline=null;
+    activeGameSessionBaseline=null;
+}
+function setGameSaveStatus(text){
+    const el=document.getElementById("game-save-status");
+    if(!el)return;
+    el.textContent=text||"";
+    el.style.display=text?"block":"none";
+}
+function gameSaveDocId(name){
+    return encodeURIComponent(String(name||"")).replace(/%/g,"_").slice(0,150);
+}
+function applySavedExplicitState(){
+    try{
+        if(activeGameExplicitState!==null && activeGameExplicitState!==undefined){
+            localStorage.setItem("__MATRIX_GAME_STATE__",JSON.stringify(activeGameExplicitState));
+        }
+    }catch(e){}
+}
+async function restoreCurrentGameProgress(){
+    if(!activeGameName || !currentUser || !db)return;
+    try{
+        const snap=await db.collection("users").doc(currentUser.uid).collection("gameSaves").doc(gameSaveDocId(activeGameName)).get();
+        if(!snap.exists)return;
+        const data=snap.data()||{};
+        activeGameExplicitState=data.explicitState===undefined?null:data.explicitState;
+        applyStorageDiff(window.localStorage,data.localStorageDiff||{});
+        applyStorageDiff(window.sessionStorage,data.sessionStorageDiff||{});
+        applySavedExplicitState();
+    }catch(e){
+        console.warn("restoreCurrentGameProgress:",e);
+        setGameSaveStatus("⚠️ الحفظ السحابي غير متاح حاليًا");
+    }
+}
+function serializeSaveSignature(payload){
+    try{return JSON.stringify(payload)}catch(e){return "";}
+}
+async function saveCurrentGameProgress(){
+    if(!activeGameName || !currentUser || !db)return;
+    const btn=document.getElementById("game-save-btn");
+    if(btn)btn.disabled=true;
+    try{
+        const afterLocal=captureStorage(window.localStorage);
+        const afterSession=captureStorage(window.sessionStorage);
+        const payload={
+            gameName:activeGameName,
+            explicitState:activeGameExplicitState===undefined?null:activeGameExplicitState,
+            localStorageDiff:storageDiff(activeGameLocalBaseline||{},afterLocal),
+            sessionStorageDiff:storageDiff(activeGameSessionBaseline||{},afterSession),
+            savedAt:firebase.firestore.FieldValue.serverTimestamp()
+        };
+        applySavedExplicitState();
+        const compact=JSON.stringify(payload);
+        if(compact.length>800000){
+            setGameSaveStatus("⚠️ بيانات حفظ اللعبة كبيرة جدًا، تم تجاهل الحفظ السحابي.");
+            return;
+        }
+        const signature=serializeSaveSignature({...payload,savedAt:null});
+        if(signature===activeGameLastSavedSignature)return;
+        await db.collection("users").doc(currentUser.uid).collection("gameSaves").doc(gameSaveDocId(activeGameName)).set(payload,{merge:true});
+        activeGameLastSavedSignature=signature;
+        setGameSaveStatus("✅ تم حفظ تقدمك");
+    }catch(e){
+        console.warn("saveCurrentGameProgress:",e);
+        setGameSaveStatus("⚠️ لم يتم حفظ التقدم: تأكد من إعداد Firestore");
+    }finally{
+        if(btn)btn.disabled=false;
+    }
+}
+function startGameAutosave(){
+    stopGameAutosave();
+    if(!currentUser)return;
+    activeGameSaveTimer=setInterval(()=>{saveCurrentGameProgress();},10000);
+}
+function stopGameAutosave(){
+    if(activeGameSaveTimer){clearInterval(activeGameSaveTimer);activeGameSaveTimer=null;}
+}
+window.addEventListener("message",event=>{
+    if(!event.data || event.data.type!=="MATRIX_GAME_EXPLICIT_SAVE")return;
+    if(!activeGameName)return;
+    if(event.origin!==window.location.origin)return;
+    activeGameExplicitState=event.data.state===undefined?null:event.data.state;
+    saveCurrentGameProgress();
+});
+window.addEventListener("beforeunload",()=>{saveCurrentGameProgress();});
+async function openGame(encodedName){
     const name=decodeURIComponent(encodedName);
     const game=catalog.find(g=>g.name===name);
     const iframe=document.getElementById("game-container");
 
+    await saveCurrentGameProgress();
+    restoreStorageBaseline();
+
+    activeGameName=name;
+    activeGameId=game?.id||name;
+    activeGameExplicitState=null;
+    activeGameLastSavedSignature="";
+    activeGameLocalBaseline=captureStorage(window.localStorage);
+    activeGameSessionBaseline=captureStorage(window.sessionStorage);
+
     document.getElementById("current-title").textContent=prettyName(name);
     showGameLoading();
+    setGameSaveStatus(currentUser?"جاري تحميل الحفظ المرتبط بحسابك…":"سجّل الدخول لحفظ التقدم على الحساب.");
     document.getElementById("game-screen").style.display="block";
     document.body.style.overflow="hidden";
 
-    iframe.onload=hideGameLoading;
+    await restoreCurrentGameProgress();
+
+    iframe.onload=()=>{
+        hideGameLoading();
+        startGameAutosave();
+        setGameSaveStatus(currentUser?"✅ الحفظ التلقائي شغال":"⚠️ الحفظ مربوط بالحساب بعد تسجيل الدخول");
+    };
     iframe.removeAttribute("src");
     iframe.srcdoc="";
     if(game?.htmlCode){
@@ -1054,14 +1222,21 @@ function openGame(encodedName){
     saveGameActivity(name);
     renderHomeSections();
 }
-function closeGame(){
+async function closeGame(){
+    await saveCurrentGameProgress();
+    stopGameAutosave();
+    restoreStorageBaseline();
     const iframe=document.getElementById("game-container");
     iframe.src="";
     iframe.srcdoc="";
     hideGameLoading();
     document.getElementById("game-screen").style.display="none";
     document.body.style.overflow="";
+    activeGameName=null;
+    activeGameId=null;
+    activeGameExplicitState=null;
 }
+
 async function requestLandscape(){
     try{
         if(screen.orientation?.lock){
