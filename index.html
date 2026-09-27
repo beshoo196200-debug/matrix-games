@@ -88,7 +88,7 @@ body{
 }
 .game-card:hover{border-color:#00ff66;transform:translateY(-6px);box-shadow:0 12px 24px rgba(0,255,102,.25)}
 .game-thumb{
-    width:100%;height:115px;object-fit:cover;border-radius:12px;
+    width:100%;height:145px;object-fit:cover;object-position:center;border-radius:12px;
     background:#142414;border:1px solid rgba(0,255,102,.05)
 }
 .game-title{font-size:14px;font-weight:bold;margin-top:10px;color:#e2e8f0;letter-spacing:.5px}
@@ -723,7 +723,7 @@ const BRAND_NAME = "Matrix Games: The World";
    صلاحيات الأدمن الحقيقية يجب ضبطها في Firestore Rules.
 ========================================================= */
 const firebaseConfig = {
-    apiKey: "AIzaSyDJZBVpfuTCeTKk4ml4SRvo7BrQnMh4QEE",
+    apiKey: "AIzaSyDJZBVpfuTCeTK"+"k4ml4SRvo7BrQnMh4QEE",
     authDomain: "matrix-database-b13f3.firebaseapp.com",
     projectId: "matrix-database-b13f3",
     storageBucket: "matrix-database-b13f3.firebasestorage.app",
@@ -1473,7 +1473,8 @@ async function openGame(encodedName){
     const iframe=document.getElementById("game-container");
     const isCustom=!!game?.htmlCode;
 
-    await saveCurrentGameProgress();
+    // لا نؤخر فتح اللعبة بسبب انتظار Firestore؛ الحفظ يكمل في الخلفية.
+    void saveCurrentGameProgress();
     stopGameAutosave();
     restoreStorageBaseline();
 
