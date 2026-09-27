@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics-compat.js"></script>
 
 
 <style>
@@ -270,6 +271,7 @@ iframe{width:100%;height:100%;border:none}
                 <button class="admin-nav" onclick="switchAdminTab('manage-games',this)">🎮 إدارة الألعاب</button>
                 <button class="admin-nav" onclick="switchAdminTab('design',this)">🎨 تصميم الموقع</button>
                 <button class="admin-nav" onclick="switchAdminTab('loading',this)">⏳ شاشة تحميل اللعبة</button>
+                <button class="admin-nav" onclick="switchAdminTab('analytics',this)">📊 الإحصائيات</button>
                 <button class="admin-nav" onclick="switchAdminTab('settings',this)">⚙️ إعدادات الموقع</button>
                 <button class="admin-nav" onclick="switchAdminTab('tools',this)">🧰 أدوات المدير</button>
             </aside>
@@ -552,6 +554,64 @@ iframe{width:100%;height:100%;border:none}
                     </div>
                 </section>
 
+                <section id="admin-tab-analytics" class="admin-tab">
+                    <div class="admin-panel-card">
+                        <h3>📊 إحصائيات Matrix Games</h3>
+                        <p class="admin-help">الموقع الآن يرسل أحداث الاستخدام إلى Google Analytics من خلال Firebase. يمكنك من هنا متابعة نشاط الألعاب والبحث والمفضلة وتسجيلات الدخول، مع روابط مباشرة للتقارير الكاملة.</p>
+
+                        <div class="analytics-status-card">
+                            <span class="analytics-status-dot"></span>
+                            <div>
+                                <b id="analytics-status-title">جاري التحقق من Analytics...</b>
+                                <small id="analytics-status-text">سيظهر هنا إذا كان القياس يعمل.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-stat-grid analytics-local-grid">
+                        <div class="admin-stat"><span>🎮</span><b id="local-stat-game-opens">0</b><small>تشغيل ألعاب على هذا الجهاز</small></div>
+                        <div class="admin-stat"><span>🔎</span><b id="local-stat-searches">0</b><small>عمليات بحث على هذا الجهاز</small></div>
+                        <div class="admin-stat"><span>⭐</span><b id="local-stat-favorites">0</b><small>تغييرات المفضلة</small></div>
+                        <div class="admin-stat"><span>👤</span><b id="local-stat-logins">0</b><small>عمليات دخول على هذا الجهاز</small></div>
+                    </div>
+
+                    <div class="admin-panel-card">
+                        <h3>🔥 أكثر الألعاب تشغيلًا على هذا الجهاز</h3>
+                        <div id="local-top-games" class="analytics-list"></div>
+                    </div>
+
+                    <div class="admin-panel-card">
+                        <h3>🔗 التقارير العامة</h3>
+                        <div class="analytics-link-grid">
+                            <a class="analytics-link-card" href="https://console.firebase.google.com/project/matrix-database-b13f3/analytics/dashboard" target="_blank" rel="noopener">
+                                <strong>Google Analytics / Firebase</strong>
+                                <span>الزوار، الجلسات، الأجهزة، الدول، مصادر الزيارات، الأحداث، والألعاب.</span>
+                                <b>فتح Analytics ↗</b>
+                            </a>
+                            <a class="analytics-link-card" href="https://search.google.com/search-console" target="_blank" rel="noopener">
+                                <strong>Google Search Console</strong>
+                                <span>مرات الظهور، النقرات، CTR، متوسط الظهور، وطلبات البحث التي جلبت الزوار.</span>
+                                <b>فتح Search Console ↗</b>
+                            </a>
+                        </div>
+                        <p class="admin-help" style="margin-top:12px">ملحوظة: بيانات Google Search Console وبيانات الزوار التفصيلية في Analytics مملوكة لخدمات Google نفسها، لذلك زرنا لك التقارير الرسمية داخل لوحة التحكم بدل وضع مفاتيح Google الحساسة داخل كود الموقع.</p>
+                    </div>
+
+                    <div class="admin-panel-card">
+                        <h3>📌 الأحداث التي نسجلها من الموقع</h3>
+                        <div class="admin-feature-list">
+                            <div>✅ فتح لعبة وتشغيلها</div>
+                            <div>✅ البحث داخل الموقع</div>
+                            <div>✅ إضافة وإزالة المفضلة</div>
+                            <div>✅ تسجيل الدخول وإنشاء الحساب</div>
+                            <div>✅ فتح ملء الشاشة</div>
+                            <div>✅ نوع الجهاز والمتصفح والبيانات التلقائية التي يوفرها Analytics</div>
+                        </div>
+                    </div>
+
+                    <button class="secondary-btn admin-action-btn" onclick="refreshLocalAnalyticsPanel()">🔄 تحديث الإحصائيات المحلية</button>
+                </section>
+
                 <section id="admin-tab-settings" class="admin-tab">
                     <div class="admin-panel-card">
                         <h3>⚙️ إعدادات الموقع</h3>
@@ -674,7 +734,9 @@ const firebaseConfig = {
 let firebaseReady = false;
 let auth = null;
 let db = null;
+let analytics = null;
 let storage = null;
+let analyticsReady = false;
 
 try {
     if (!firebaseConfig.apiKey.startsWith("PUT_") &&
@@ -683,6 +745,12 @@ try {
         firebase.initializeApp(firebaseConfig);
         auth = firebase.auth();
         db = firebase.firestore();
+        try{
+            analytics = firebase.analytics();
+            analyticsReady = true;
+        }catch(analyticsErr){
+            console.warn("Firebase Analytics initialization:",analyticsErr);
+        }
         firebaseReady = true;
     }
 } catch (err) {
@@ -1138,12 +1206,22 @@ function toggleFavorite(encodedName,event){
     const name=decodeURIComponent(encodedName);
     if(favoriteGames.has(name))favoriteGames.delete(name);else favoriteGames.add(name);
     saveLocalFavorites();
+    trackAnalytics(favoriteGames.has(name)?"favorite_add":"favorite_remove",{game_name:name});
+    trackLocalAnalytics("favorite",name);
     if(currentUser&&db)db.collection("users").doc(currentUser.uid).set({favorites:[...favoriteGames]},{merge:true}).catch(e=>console.warn("favorite save:",e));
     renderHomeSections();filterGames();
 }
 
+let searchAnalyticsTimer=null;
 function filterGames(){
     const q=document.getElementById("search-input").value.trim().toLowerCase();
+    if(q){
+        clearTimeout(searchAnalyticsTimer);
+        searchAnalyticsTimer=setTimeout(()=>{
+            trackAnalytics("site_search",{search_term:q});
+            trackLocalAnalytics("search");
+        },500);
+    }
     let filtered=catalog.filter(g=>g.enabled!==false && (g.name.toLowerCase().includes(q)||prettyName(g.name).toLowerCase().includes(q)));
     if(selectedCategory!=="الكل")filtered=filtered.filter(g=>getGameCategory(g)===selectedCategory);
     document.getElementById("home-sections").style.display=q?"none":"block";
@@ -1408,6 +1486,8 @@ async function openGame(encodedName){
 
     recordLocalPlay(name);
     saveGameActivity(name);
+    trackAnalytics("game_start",{game_name:name,game_category:getGameCategory(game||{})});
+    trackLocalAnalytics("game",name);
     renderHomeSections();
 }
 async function closeGame(){
@@ -1458,6 +1538,7 @@ async function toggleLandscape(){
 
 async function goFull(){
     const box=document.getElementById("game-screen");
+    trackAnalytics("fullscreen_open");
     try{
         if(document.fullscreenElement){
             document.exitFullscreen();
@@ -1673,6 +1754,10 @@ function friendlyFirebaseError(e){
 async function loadUserProfile(user){
     currentUser=user;
     if(user){
+        trackAnalytics("login",{method:user.providerData?.[0]?.providerId||"unknown"});
+        trackLocalAnalytics("login");
+    }
+    if(user){
         closeAuthModal();
     }
     if(!user){
@@ -1763,6 +1848,7 @@ function switchAdminTab(tab,btn){
     if(tab==="manage-games")loadAdminGames();
     if(tab==="design"||tab==="settings")loadSiteSettingsToForm();
     if(tab==="loading")loadLoadingSettingsToForm();
+    if(tab==="analytics")refreshLocalAnalyticsPanel();
 }
 
 function populateAdminGameSelect(){
@@ -2391,6 +2477,7 @@ async function reloadGames(){
 buildBaseCatalog();
 favoriteGames=new Set(getLocalFavorites());
 applySiteSettings();
+refreshLocalAnalyticsPanel();
 renderCategoryBar();
 renderHomeSections();
 renderGames();
