@@ -631,6 +631,7 @@ iframe{width:100%;height:100%;border:none}
             <input type="text" id="login-user" class="auth-input" placeholder="البريد الإلكتروني أو اسم المستخدم">
             <input type="password" id="login-pass" class="auth-input" placeholder="كلمة المرور السرية">
             <button class="auth-btn" onclick="loginPlayer()">دخول السيرفر 🎮</button>
+            <button class="secondary-btn auth-btn" style="margin-top:8px" onclick="sendPasswordReset()">🔑 نسيت كلمة المرور؟</button>
             <div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:#6f8b6f;font-size:12px">
                 <span style="height:1px;background:#1b321f;flex:1"></span><span>أو</span>
                 <span style="height:1px;background:#1b321f;flex:1"></span>
@@ -1551,11 +1552,34 @@ async function loginPlayer(){
             if(!userDoc.exists){authMessage("اسم المستخدم غير موجود.");return;}
             email=fakeEmail(loginValue);
         }
-        await auth.signInWithEmailAndPassword(email,pass);
-        closeAuthModal();
+        const result=await auth.signInWithEmailAndPassword(email,pass);
+        if(result?.user){
+            closeAuthModal();
+            await loadUserProfile(result.user);
+        }
     }catch(e){
-        console.error(e);
-        authMessage("تعذر تسجيل الدخول: "+friendlyFirebaseError(e));
+        console.error("Email sign-in:",e);
+        const code=e?.code||"";
+        if(code==="auth/invalid-credential" || code==="auth/wrong-password"){
+            authMessage("Firebase رفض البريد أو كلمة المرور. مهم: كلمة مرور Gmail ليست بالضرورة كلمة مرور حساب Firebase. لو حساب الأدمن اتعمل باستخدام Google فقط، استخدم زر Google. ولو كان له كلمة مرور Firebase، استخدم كلمة المرور التي أنشأتها داخل Firebase.");
+        }else{
+            authMessage("تعذر تسجيل الدخول: "+friendlyFirebaseError(e));
+        }
+    }
+}
+async function sendPasswordReset(){
+    if(!firebaseReady){authMessage("Firebase غير مضبوط بعد.");return;}
+    const loginValue=document.getElementById("login-user")?.value.trim()||"";
+    if(!loginValue || !loginValue.includes("@")){
+        authMessage("اكتب البريد الإلكتروني الكامل أولاً، مثل name@gmail.com.");
+        return;
+    }
+    try{
+        await auth.sendPasswordResetEmail(loginValue);
+        authMessage("تم إرسال رسالة إعادة تعيين كلمة المرور إلى البريد إذا كان الحساب يستخدم Email/Password.");
+    }catch(e){
+        console.error("Password reset:",e);
+        authMessage("تعذر إرسال إعادة تعيين كلمة المرور: "+friendlyFirebaseError(e));
     }
 }
 async function loginWithGoogle(){
@@ -1634,7 +1658,11 @@ function friendlyFirebaseError(e){
         "auth/operation-not-allowed":"طريقة تسجيل الدخول دي لسه مش مفعّلة في Firebase.",
         "auth/popup-closed-by-user":"تم إغلاق نافذة تسجيل الدخول.",
         "auth/popup-blocked":"المتصفح منع نافذة تسجيل الدخول؛ جرّب مرة أخرى.",
-        "auth/unauthorized-domain":"دومين الموقع غير مضاف إلى Authorized domains في Firebase."
+        "auth/unauthorized-domain":"دومين الموقع غير مضاف إلى Authorized domains في Firebase.",
+        "auth/invalid-email":"صيغة البريد الإلكتروني غير صحيحة.",
+        "auth/too-many-requests":"تمت محاولات دخول كثيرة. انتظر قليلًا ثم حاول مرة أخرى.",
+        "auth/user-disabled":"هذا الحساب معطّل في Firebase.",
+        "auth/operation-not-allowed":"تسجيل الدخول بالبريد/كلمة المرور غير مفعّل في Firebase."
     };
     return map[code] || e.message || "خطأ غير معروف";
 }
