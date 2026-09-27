@@ -95,8 +95,11 @@ body{
 .game-card{position:relative}
 .game-badges{position:absolute;top:16px;right:16px;display:flex;gap:5px;flex-wrap:wrap;z-index:2}
 .game-badge{padding:4px 7px;border-radius:999px;font-size:10px;font-weight:800;background:#061006;color:#00ff66;border:1px solid rgba(0,255,102,.35)}
-.favorite-btn{position:absolute;top:16px;left:16px;z-index:3;width:34px;height:34px;border:0;border-radius:50%;background:rgba(6,12,6,.9);color:#9bb39b;cursor:pointer;font-size:18px;line-height:1}
-.favorite-btn.active{color:#ffd54a}
+.favorite-btn{position:static;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;border:1px solid #1b321f;border-radius:8px;background:#102011;color:#9bb39b;cursor:pointer;font-size:17px;line-height:1;vertical-align:middle}
+.favorite-btn:hover{border-color:#00ff66;box-shadow:0 0 8px rgba(0,255,102,.2)}
+.favorite-btn.active{color:#ffd54a;border-color:#6d5a12}
+.game-title-row{display:flex;align-items:center;justify-content:flex-start;gap:8px;margin-top:10px}
+.game-title-row .game-title{margin-top:0;flex:1}
 .home-sections{max-width:1250px;margin:0 auto 30px}
 .home-section{margin:0 0 28px;text-align:right}
 .section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
@@ -990,10 +993,13 @@ function gameCardHtml(game){
     if(game.featured)badges.push("⭐ مميز");
     if(favoriteGames.has(game.name))badges.push("❤️ مفضلة");
     return `<div class="game-card" data-game="${encodeURIComponent(game.name)}" onclick="openGame(decodeURIComponent(this.dataset.game))">
-        <div class="game-badges">${badges.map(b=>`<span class="game-badge">${b}</span>`).join("")}</div>
-        <button class="favorite-btn ${favoriteGames.has(game.name)?"active":""}" title="المفضلة" data-game="${encodeURIComponent(game.name)}" onclick="toggleFavorite(this.dataset.game,event)">★</button>
+        <div class="game-badges">${badges.filter(b=>b!=="❤️ مفضلة").map(b=>`<span class="game-badge">${b}</span>`).join("")}</div>
         <img class="game-thumb" src="${img}" alt="${title}" onerror="this.onerror=null;this.src='https://via.placeholder.com/400x250/060c06/00ff66?text=Matrix+Games'">
-        <div class="game-title">${title}</div><div class="game-meta">🎮 ${cat}</div>
+        <div class="game-title-row">
+            <button class="favorite-btn ${favoriteGames.has(game.name)?"active":""}" title="المفضلة" data-game="${encodeURIComponent(game.name)}" onclick="toggleFavorite(this.dataset.game,event)">★</button>
+            <div class="game-title">${title}</div>
+        </div>
+        <div class="game-meta">🎮 ${cat}</div>
     </div>`;
 }
 function renderGames(list=catalog){
