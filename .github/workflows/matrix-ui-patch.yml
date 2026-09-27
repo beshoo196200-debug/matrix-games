@@ -1,0 +1,51 @@
+name: Apply Matrix UI performance patch
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("index.html")
+          s = p.read_text(encoding="utf-8")
+          old_css = """.game-thumb{
+              width:100%;height:115px;object-fit:cover;border-radius:12px;
+              background:#142414;border:1px solid rgba(0,255,102,.05)
+          }"""
+          new_css = """.game-thumb{
+              width:100%;height:145px;object-fit:cover;object-position:center;border-radius:12px;
+              background:#142414;border:1px solid rgba(0,255,102,.05)
+          }"""
+          if old_css not in s:
+              raise SystemExit("old CSS not found")
+          s = s.replace(old_css, new_css, 1)
+          old_open = """    await saveCurrentGameProgress();
+              stopGameAutosave();
+              restoreStorageBaseline();
+
+              activeGameName=name;"""
+          new_open = """    // لا نؤخر فتح اللعبة بسبب انتظار Firestore؛ الحفظ يكمل في الخلفية.
+              void saveCurrentGameProgress();
+              stopGameAutosave();
+              restoreStorageBaseline();
+
+              activeGameName=name;"""
+          if old_open not in s:
+              raise SystemExit("old openGame block not found")
+          s = s.replace(old_open, new_open, 1)
+          p.write_text(s, encoding="utf-8")
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "matrix-games-world"
+          git config user.email "matrix-games-world@users.noreply.github.com"
+          git add index.html
+          git commit -m "Speed up game opening and enlarge game thumbnails" || exit 0
+          git push
