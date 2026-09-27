@@ -164,14 +164,17 @@ iframe{width:100%;height:100%;border:none}
 .game-loading.hidden{opacity:0;visibility:hidden;pointer-events:none}
 .loading-box{
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-    padding:28px 35px;min-width:280px;border:1px solid rgba(0,255,102,.25);
-    border-radius:18px;background:rgba(3,10,3,.86);box-shadow:0 0 30px rgba(0,255,102,.12);
+    padding:14px 20px;min-width:280px;max-width:92vw;
+    border:0;border-radius:0;background:transparent;box-shadow:none;
 }
-.loading-spinner-wrap{position:relative;width:190px;height:190px;display:flex;align-items:center;justify-content:center}
+.loading-spinner-wrap{position:relative;width:190px;height:190px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .loading-spinner{
-    position:absolute;inset:0;width:100%;height:100%;border-radius:50%;border:7px solid #173217;
+    position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;
+    border-radius:50%;border:7px solid rgba(23,50,23,.9);
     border-top-color:#00ff66;border-right-color:#00ff66;
-    animation:matrixSpin 1.05s linear infinite;
+    animation:matrixOrbit 1.05s linear infinite;
+    transform-origin:50% 50%;will-change:transform;
+    z-index:1;
 }
 .loading-logo{position:relative;width:105px;height:105px;border-radius:22px;object-fit:cover;z-index:2;border:2px solid rgba(0,255,102,.35);box-shadow:0 0 28px rgba(0,255,102,.2);background:#060c06}
 .loading-title{color:#00ff66;font-size:20px;font-weight:900;text-align:center}
@@ -187,6 +190,7 @@ iframe{width:100%;height:100%;border:none}
     animation:loadingDots 1.3s steps(4,end) infinite;
 }
 @keyframes matrixSpin{to{transform:rotate(360deg)}}
+@keyframes matrixOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes loadingDots{
     0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}100%{content:""}
 }
@@ -606,7 +610,7 @@ iframe{width:100%;height:100%;border:none}
         <div id="game-loading" class="game-loading">
             <div class="loading-box">
                 <div class="loading-spinner-wrap">
-                    <div class="loading-spinner"></div>
+                    <div class="loading-spinner" aria-hidden="true"></div>
                     <img id="loading-logo" class="loading-logo" src="assets/matrix-logo-192.jpg" alt="Matrix Games">
                 </div>
                 <div class="loading-title"><span id="loading-title-text">جاري تحميل اللعبة</span><span class="loading-dots"></span></div>
@@ -2154,7 +2158,8 @@ function applyLoadingSettings(){
         spinner.style.borderWidth=Number(siteSettings.loadingThickness||7)+"px";
         spinner.style.borderTopColor=siteSettings.loadingRingColor||"#00ff66";
         spinner.style.borderRightColor=siteSettings.loadingRingColor||"#00ff66";
-        spinner.style.animationDuration=Number(siteSettings.loadingSpeed||1.05)+"s";
+        spinner.style.animation="matrixOrbit "+Number(siteSettings.loadingSpeed||1.05)+"s linear infinite";
+        spinner.style.animationPlayState="running";
     }
     if(loadingLogo){
         loadingLogo.style.width=Number(siteSettings.loadingLogoSize||105)+"px";
