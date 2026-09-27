@@ -2517,7 +2517,7 @@ if(firebaseReady){
 if(firebaseReady){
     // إتمام نتيجة تسجيل الدخول عبر Google/Facebook بعد الرجوع من صفحة المزوّد.
     auth.getRedirectResult()
-        .then(result=>{
+        .then(async result=>{
             if(result && result.user){
                 try{
                     await loadUserProfile(result.user);
