@@ -1211,7 +1211,7 @@ async function openGame(encodedName){
         setGameSaveStatus(currentUser?"✅ الحفظ التلقائي شغال":"⚠️ الحفظ مربوط بالحساب بعد تسجيل الدخول");
     };
     iframe.removeAttribute("src");
-    iframe.srcdoc="";
+    iframe.removeAttribute("srcdoc");
     if(game?.htmlCode){
         iframe.srcdoc=buildCustomGameDocument(game);
     }else{
@@ -1228,7 +1228,7 @@ async function closeGame(){
     restoreStorageBaseline();
     const iframe=document.getElementById("game-container");
     iframe.src="";
-    iframe.srcdoc="";
+    iframe.removeAttribute("srcdoc");
     hideGameLoading();
     document.getElementById("game-screen").style.display="none";
     document.body.style.overflow="";
@@ -1713,6 +1713,7 @@ async function previewNewGame(){
     document.body.style.overflow="hidden";
     preview.onload=hideGameLoading;
     preview.removeAttribute("src");
+    preview.removeAttribute("srcdoc");
     preview.srcdoc=buildCustomGameDocument(tmp);
 }
 async function saveCustomGame(){
