@@ -1913,18 +1913,17 @@ async function loadSiteSettings(){
 function applySiteSettings(){
     const logo=siteSettings.logo||"assets/matrix-logo-192.jpg";
     document.querySelectorAll(".site-logo,#hero-logo").forEach(el=>{el.src=logo;});
-    ["favicon-jpg","favicon-apple"].forEach(id=>{const el=document.getElementById(id);if(el)el.href=logo;});
-    if(logo.startsWith("data:image/")){
-        const png=document.getElementById("favicon-png");
-        const shortcut=document.getElementById("favicon-shortcut");
-        if(png)png.href=logo;
-        if(shortcut)shortcut.href=logo;
-    }else{
-        const png=document.getElementById("favicon-png");
-        const shortcut=document.getElementById("favicon-shortcut");
-        if(png)png.href=logo;
-        if(shortcut)shortcut.href=logo;
-    }
+    const faviconIds=["favicon-png","favicon-jpg","favicon-shortcut","favicon-apple"];
+    faviconIds.forEach(id=>{
+        const el=document.getElementById(id);
+        if(!el)return;
+        let href=logo;
+        if(!logo.startsWith("data:") && logo.startsWith("assets/")) href=logo+"?v=matrix";
+        el.href=href;
+        if(logo.startsWith("data:image/webp")) el.type="image/webp";
+        else if(logo.startsWith("data:image/png")) el.type="image/png";
+        else if(logo.startsWith("data:image/jpeg")||logo.endsWith(".jpg")||logo.endsWith(".jpeg")) el.type="image/jpeg";
+    });
     const title=document.getElementById("hero-title");if(title)title.textContent=siteSettings.heroTitle||siteSettings.title||"Matrix Games";
     const subtitle=document.getElementById("hero-subtitle");if(subtitle)subtitle.textContent=siteSettings.heroSubtitle||"";
     const headerTitle=document.getElementById("header-site-title");if(headerTitle)headerTitle.textContent=(siteSettings.title||"Matrix Games").toUpperCase();
