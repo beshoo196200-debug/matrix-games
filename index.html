@@ -1116,8 +1116,9 @@ function restoreStorageBaseline(){
 function setGameSaveStatus(text){
     const el=document.getElementById("game-save-status");
     if(!el)return;
-    el.textContent=text||"";
-    el.style.display=text?"block":"none";
+    // رسالة الحفظ لا تظهر أثناء اللعب؛ الحفظ يعمل في الخلفية.
+    el.textContent="";
+    el.style.display="none";
 }
 function hideGameChrome(){
     document.getElementById("game-screen")?.classList.add("game-playing");
@@ -1148,7 +1149,8 @@ async function restoreCurrentGameProgress(){
         return true;
     }catch(e){
         console.warn("restoreCurrentGameProgress:",e);
-        setGameSaveStatus("⚠️ الحفظ السحابي غير متاح حاليًا");
+        // فشل الحفظ لا يمنع اللعبة ولا يعرض رسالة على الشاشة.
+        setGameSaveStatus("");
         return false;
     }
 }
@@ -1172,17 +1174,17 @@ async function saveCurrentGameProgress(){
         applySavedExplicitState();
         const compact=JSON.stringify(payload);
         if(compact.length>800000){
-            setGameSaveStatus("⚠️ بيانات حفظ اللعبة كبيرة جدًا، تم تجاهل الحفظ السحابي.");
+            setGameSaveStatus("");
             return;
         }
         const signature=serializeSaveSignature({...payload,savedAt:null});
         if(signature===activeGameLastSavedSignature)return;
         await db.collection("users").doc(currentUser.uid).collection("gameSaves").doc(gameSaveDocId(activeGameName)).set(payload,{merge:true});
         activeGameLastSavedSignature=signature;
-        setGameSaveStatus("✅ تم حفظ تقدمك");
+        setGameSaveStatus("");
     }catch(e){
         console.warn("saveCurrentGameProgress:",e);
-        setGameSaveStatus("⚠️ لم يتم حفظ التقدم: تأكد من إعداد Firestore");
+        setGameSaveStatus("");
     }finally{
         if(btn)btn.disabled=false;
     }
@@ -1222,8 +1224,10 @@ async function openGame(encodedName){
 
     document.getElementById("current-title").textContent=prettyName(name);
     showGameChrome();
+    setGameSaveStatus("");
     showGameLoading();
-    setGameSaveStatus(currentUser?"جاري تحميل الحفظ المرتبط بحسابك…":"سجّل الدخول لحفظ التقدم على الحساب.");
+    window.clearTimeout(window.matrixGameChromeTimer);
+    window.matrixGameChromeTimer=window.setTimeout(hideGameChrome,900);
     document.getElementById("game-screen").style.display="block";
     document.body.style.overflow="hidden";
 
@@ -1231,8 +1235,7 @@ async function openGame(encodedName){
         hideGameLoading();
         startGameAutosave();
         window.clearTimeout(window.matrixGameChromeTimer);
-        window.matrixGameChromeTimer=window.setTimeout(hideGameChrome,900);
-        setGameSaveStatus(currentUser?"✅ الحفظ التلقائي شغال":"⚠️ الحفظ مربوط بالحساب بعد تسجيل الدخول");
+        window.matrixGameChromeTimer=window.setTimeout(hideGameChrome,250);
 
         // للألعاب المحلية: بعد فتح اللعبة نستعيد الحفظ ثم نعيد تحميلها مرة واحدة
         // حتى يقرأ محرك اللعبة البيانات من localStorage بدون تعطيل تحميل اللعبة نفسه.
@@ -1274,7 +1277,8 @@ async function closeGame(){
     await saveCurrentGameProgress();
     stopGameAutosave();
     window.clearTimeout(window.matrixGameChromeTimer);
-    showGameChrome();
+    hideGameChrome();
+    setGameSaveStatus("");
     restoreStorageBaseline();
     const iframe=document.getElementById("game-container");
     iframe.src="";
