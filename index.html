@@ -167,13 +167,21 @@ iframe{width:100%;height:100%;border:none}
     padding:28px 35px;min-width:280px;border:1px solid rgba(0,255,102,.25);
     border-radius:18px;background:rgba(3,10,3,.86);box-shadow:0 0 30px rgba(0,255,102,.12);
 }
+.loading-spinner-wrap{position:relative;width:190px;height:190px;display:flex;align-items:center;justify-content:center}
 .loading-spinner{
-    width:58px;height:58px;border-radius:50%;border:5px solid #173217;
+    position:absolute;inset:0;width:100%;height:100%;border-radius:50%;border:7px solid #173217;
     border-top-color:#00ff66;border-right-color:#00ff66;
-    animation:matrixSpin .9s linear infinite;
+    animation:matrixSpin 1.05s linear infinite;
 }
-.loading-title{color:#00ff66;font-size:18px;font-weight:800}
-.loading-sub{color:#9bb39b;font-size:13px}
+.loading-logo{position:relative;width:105px;height:105px;border-radius:22px;object-fit:cover;z-index:2;border:2px solid rgba(0,255,102,.35);box-shadow:0 0 28px rgba(0,255,102,.2);background:#060c06}
+.loading-title{color:#00ff66;font-size:20px;font-weight:900;text-align:center}
+.loading-sub{color:#9bb39b;font-size:13px;max-width:340px;text-align:center;line-height:1.7}
+.loading-preview-box{position:relative;width:100%;min-height:310px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border-radius:18px;background:#000;overflow:hidden;border:1px solid #173217;padding:20px}
+.loading-preview-spinner-wrap{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center}
+.loading-preview-spinner{position:absolute;inset:0;border:7px solid #173217;border-top-color:#00ff66;border-right-color:#00ff66;border-radius:50%;animation:matrixSpin 1.05s linear infinite}
+.loading-preview-spinner-wrap img{width:85px;height:85px;object-fit:cover;border-radius:18px;position:relative;z-index:2}
+.loading-preview-title{color:#00ff66;font-weight:900;font-size:18px}
+.loading-preview-sub{color:#9bb39b;font-size:12px;text-align:center}
 .loading-dots::after{
     content:"";display:inline-block;width:1.2em;text-align:left;
     animation:loadingDots 1.3s steps(4,end) infinite;
@@ -257,6 +265,7 @@ iframe{width:100%;height:100%;border:none}
                 <button class="admin-nav" onclick="switchAdminTab('add-game',this)">➕ إضافة لعبة</button>
                 <button class="admin-nav" onclick="switchAdminTab('manage-games',this)">🎮 إدارة الألعاب</button>
                 <button class="admin-nav" onclick="switchAdminTab('design',this)">🎨 تصميم الموقع</button>
+                <button class="admin-nav" onclick="switchAdminTab('loading',this)">⏳ شاشة تحميل اللعبة</button>
                 <button class="admin-nav" onclick="switchAdminTab('settings',this)">⚙️ إعدادات الموقع</button>
                 <button class="admin-nav" onclick="switchAdminTab('tools',this)">🧰 أدوات المدير</button>
             </aside>
@@ -456,6 +465,89 @@ iframe{width:100%;height:100%;border:none}
                     </div>
                 </section>
 
+                <section id="admin-tab-loading" class="admin-tab">
+                    <div class="admin-panel-card">
+                        <h3>⏳ شاشة انتظار وتحميل اللعبة</h3>
+                        <p class="admin-help">من هنا تتحكم بالكامل في شاشة الانتظار: اللوجو الموجود في المنتصف، الحلقة التي تدور حوله، حجمها وسرعتها، الألوان، والنصوص.</p>
+
+                        <div class="admin-form-grid">
+                            <div class="admin-form-wide">
+                                <label class="admin-label">النص الرئيسي</label>
+                                <input id="loading-title-input" class="auth-input" placeholder="جاري تحميل اللعبة">
+                            </div>
+                            <div class="admin-form-wide">
+                                <label class="admin-label">النص الصغير أسفل الرسالة</label>
+                                <input id="loading-sub-input" class="auth-input" placeholder="استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮">
+                            </div>
+                            <div>
+                                <label class="admin-label">حجم الحلقة</label>
+                                <input type="range" id="loading-spinner-size-input" min="90" max="280" value="190" oninput="updateLoadingFormLabels()">
+                                <span id="loading-spinner-size-value" class="range-value">190px</span>
+                            </div>
+                            <div>
+                                <label class="admin-label">حجم اللوجو في المنتصف</label>
+                                <input type="range" id="loading-logo-size-input" min="45" max="180" value="105" oninput="updateLoadingFormLabels()">
+                                <span id="loading-logo-size-value" class="range-value">105px</span>
+                            </div>
+                            <div>
+                                <label class="admin-label">سرعة الدوران</label>
+                                <input type="range" id="loading-speed-input" min="0.35" max="3" step="0.05" value="1.05" oninput="updateLoadingFormLabels()">
+                                <span id="loading-speed-value" class="range-value">1.05 ثانية</span>
+                            </div>
+                            <div>
+                                <label class="admin-label">سمك الحلقة</label>
+                                <input type="range" id="loading-thickness-input" min="3" max="14" value="7" oninput="updateLoadingFormLabels()">
+                                <span id="loading-thickness-value" class="range-value">7px</span>
+                            </div>
+                            <div>
+                                <label class="admin-label">لون الحلقة</label>
+                                <input type="color" id="loading-ring-color-input" class="admin-color-input" value="#00ff66">
+                            </div>
+                            <div>
+                                <label class="admin-label">لون خلفية شاشة الانتظار</label>
+                                <input type="color" id="loading-bg-color-input" class="admin-color-input" value="#000000">
+                            </div>
+                            <div>
+                                <label class="admin-label">إظهار اللوجو</label>
+                                <select id="loading-show-logo-input" class="auth-input"><option value="true">نعم</option><option value="false">لا</option></select>
+                            </div>
+                            <div>
+                                <label class="admin-label">حجم صندوق الانتظار</label>
+                                <input type="range" id="loading-box-width-input" min="280" max="520" value="340" oninput="updateLoadingFormLabels()">
+                                <span id="loading-box-width-value" class="range-value">340px</span>
+                            </div>
+                            <div class="admin-form-wide logo-upload-card">
+                                <label class="admin-label">لوجو شاشة التحميل</label>
+                                <div class="logo-upload-row">
+                                    <img id="loading-logo-preview" class="admin-logo-preview" src="assets/matrix-logo-192.jpg" alt="معاينة لوجو التحميل">
+                                    <div class="logo-upload-controls">
+                                        <input type="file" id="loading-logo-input" class="auth-input" accept="image/png,image/jpeg,image/webp" onchange="previewLoadingLogo(this)">
+                                        <small class="admin-help">تقدر تستخدم نفس لوجو الموقع أو تختار لوجو مختلف لشاشة الانتظار.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-panel-card" style="margin-top:14px">
+                            <h3 style="font-size:16px">👀 معاينة مباشرة</h3>
+                            <div id="loading-admin-preview" class="loading-preview-box">
+                                <div class="loading-preview-spinner-wrap">
+                                    <div class="loading-preview-spinner"></div>
+                                    <img id="loading-preview-logo" src="assets/matrix-logo-192.jpg" alt="preview">
+                                </div>
+                                <div id="loading-preview-title" class="loading-preview-title">جاري تحميل اللعبة</div>
+                                <div id="loading-preview-sub" class="loading-preview-sub">استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮</div>
+                            </div>
+                        </div>
+
+                        <div class="admin-actions">
+                            <button class="auth-btn" onclick="saveLoadingSettings()">💾 حفظ شاشة التحميل</button>
+                            <button class="secondary-btn admin-action-btn" onclick="resetLoadingSettings()">↩️ إعادة الإعدادات الأساسية</button>
+                        </div>
+                        <div id="loading-message" class="admin-message"></div>
+                    </div>
+                </section>
+
                 <section id="admin-tab-settings" class="admin-tab">
                     <div class="admin-panel-card">
                         <h3>⚙️ إعدادات الموقع</h3>
@@ -513,9 +605,12 @@ iframe{width:100%;height:100%;border:none}
         <div id="game-save-status" class="game-save-status"></div>
         <div id="game-loading" class="game-loading">
             <div class="loading-box">
-                <div class="loading-spinner"></div>
-                <div class="loading-title">جاري تحميل اللعبة<span class="loading-dots"></span></div>
-                <div class="loading-sub">استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮</div>
+                <div class="loading-spinner-wrap">
+                    <div class="loading-spinner"></div>
+                    <img id="loading-logo" class="loading-logo" src="assets/matrix-logo-192.jpg" alt="Matrix Games">
+                </div>
+                <div class="loading-title"><span id="loading-title-text">جاري تحميل اللعبة</span><span class="loading-dots"></span></div>
+                <div id="loading-sub-text" class="loading-sub">استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮</div>
             </div>
         </div>
         <iframe id="game-container" src="" allowfullscreen></iframe>
@@ -1628,6 +1723,7 @@ function switchAdminTab(tab,btn){
     }
     if(tab==="manage-games")loadAdminGames();
     if(tab==="design"||tab==="settings")loadSiteSettingsToForm();
+    if(tab==="loading")loadLoadingSettingsToForm();
 }
 
 function populateAdminGameSelect(){
@@ -1906,14 +2002,32 @@ async function restoreSelectedGame(){
     try{await db.collection("games").doc(game.id).set({enabled:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:currentUser.uid},{merge:true});alert("تمت إعادة تفعيل اللعبة ✅");await reloadGames();await loadAdminGames();}
     catch(e){alert("تعذر التفعيل: "+friendlyFirebaseError(e));}
 }
-function settingsDefaults(){return {title:"Matrix Games",heroTitle:"Matrix Games",heroSubtitle:"عالم ماتريكس للألعاب — العب ألعابك مباشرة من مجلد offline",accentColor:"#00ff66",bgTop:"#060c06",bgBottom:"#010301",heroLogoSize:80,showCounter:true,showLogin:true,statusMessage:""};}
+function settingsDefaults(){return {
+    title:"Matrix Games",heroTitle:"Matrix Games",
+    heroSubtitle:"عالم ماتريكس للألعاب — العب ألعابك مباشرة من مجلد offline",
+    accentColor:"#00ff66",bgTop:"#060c06",bgBottom:"#010301",
+    heroLogoSize:80,showCounter:true,showLogin:true,statusMessage:"",
+    loadingTitle:"جاري تحميل اللعبة",
+    loadingSub:"استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮",
+    loadingSpinnerSize:190,
+    loadingLogoSize:105,
+    loadingSpeed:1.05,
+    loadingThickness:7,
+    loadingRingColor:"#00ff66",
+    loadingBgColor:"#000000",
+    loadingShowLogo:true,
+    loadingBoxWidth:340,
+    loadingLogo:""
+};}
 async function loadSiteSettings(){
     if(!db)return;
     try{
         const snap=await db.collection("games").doc("site_settings").get();
         siteSettings=snap.exists?{...settingsDefaults(),...snap.data()}:settingsDefaults();
         applySiteSettings();
+        applyLoadingSettings();
         loadSiteSettingsToForm();
+        loadLoadingSettingsToForm();
     }catch(e){console.warn("site settings:",e);}
 }
 function applySiteSettings(){
@@ -1942,6 +2056,7 @@ function applySiteSettings(){
     document.title=(siteSettings.title||"Matrix Games")+" | عالم ماتريكس للألعاب";
     let style=document.getElementById("site-custom-style");
     if(!style){style=document.createElement("style");style.id="site-custom-style";document.head.appendChild(style);}
+    applyLoadingSettings();
     const accent=siteSettings.accentColor||"#00ff66";
     style.textContent='body{background:radial-gradient(circle at top,'+(siteSettings.bgTop||"#060c06")+' 0%, '+(siteSettings.bgBottom||"#010301")+' 100%)}.top-header{border-bottom-color:'+accent+'}.logo-title,.hero h1,.admin-title,.section-head h3{color:'+accent+'}.hero-logo{width:'+Number(siteSettings.heroLogoSize||80)+'px;height:'+Number(siteSettings.heroLogoSize||80)+'px}.loading-spinner{border-top-color:'+accent+';border-right-color:'+accent+'}.category-chip.active,.auth-btn,.full-btn{background:'+accent+'}';
 }
@@ -1980,6 +2095,129 @@ async function compressLogoForFirestore(file,maxSize=900,quality=.9){
         };
         reader.readAsDataURL(file);
     });
+}
+function updateLoadingFormLabels(){
+    const pairs=[
+        ["loading-spinner-size-input","loading-spinner-size-value","px"],
+        ["loading-logo-size-input","loading-logo-size-value","px"],
+        ["loading-thickness-input","loading-thickness-value","px"],
+        ["loading-box-width-input","loading-box-width-value","px"]
+    ];
+    pairs.forEach(([i,o,s])=>{const a=document.getElementById(i),b=document.getElementById(o);if(a&&b)b.textContent=a.value+s;});
+    const speed=document.getElementById("loading-speed-input"),speedOut=document.getElementById("loading-speed-value");
+    if(speed&&speedOut)speedOut.textContent=Number(speed.value).toFixed(2)+" ثانية";
+    updateLoadingPreview();
+}
+function previewLoadingLogo(input){
+    const file=input?.files?.[0];
+    const imgs=[document.getElementById("loading-logo-preview"),document.getElementById("loading-preview-logo")];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>imgs.forEach(img=>{if(img)img.src=String(reader.result||"");});
+    reader.readAsDataURL(file);
+}
+function updateLoadingPreview(){
+    const s={
+        title:document.getElementById("loading-title-input")?.value||"جاري تحميل اللعبة",
+        sub:document.getElementById("loading-sub-input")?.value||"استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮",
+        spinner:Number(document.getElementById("loading-spinner-size-input")?.value||190),
+        logo:Number(document.getElementById("loading-logo-size-input")?.value||105),
+        speed:Number(document.getElementById("loading-speed-input")?.value||1.05),
+        thickness:Number(document.getElementById("loading-thickness-input")?.value||7),
+        ring:document.getElementById("loading-ring-color-input")?.value||"#00ff66",
+        bg:document.getElementById("loading-bg-color-input")?.value||"#000",
+        showLogo:document.getElementById("loading-show-logo-input")?.value!=="false",
+        boxWidth:Number(document.getElementById("loading-box-width-input")?.value||340)
+    };
+    const p=document.getElementById("loading-admin-preview");
+    const wrap=p?.querySelector(".loading-preview-spinner-wrap");
+    const ring=p?.querySelector(".loading-preview-spinner");
+    const logo=p?.querySelector("#loading-preview-logo");
+    const title=document.getElementById("loading-preview-title");
+    const sub=document.getElementById("loading-preview-sub");
+    if(p)p.style.background=s.bg;
+    if(wrap){wrap.style.width=s.spinner+"px";wrap.style.height=s.spinner+"px";}
+    if(ring){ring.style.borderWidth=s.thickness+"px";ring.style.borderTopColor=s.ring;ring.style.borderRightColor=s.ring;ring.style.animationDuration=s.speed+"s";}
+    if(logo){logo.style.width=s.logo+"px";logo.style.height=s.logo+"px";logo.style.display=s.showLogo?"block":"none";}
+    if(title)title.textContent=s.title;
+    if(sub)sub.textContent=s.sub;
+    if(p){p.style.setProperty("--loading-preview-width",s.boxWidth+"px");}
+}
+function applyLoadingSettings(){
+    const logo=siteSettings.loadingLogo||siteSettings.logo||"assets/matrix-logo-192.jpg";
+    const loadingLogo=document.getElementById("loading-logo");
+    if(loadingLogo)loadingLogo.src=logo;
+    const title=document.getElementById("loading-title-text");if(title)title.textContent=siteSettings.loadingTitle||"جاري تحميل اللعبة";
+    const sub=document.getElementById("loading-sub-text");if(sub)sub.textContent=siteSettings.loadingSub||"استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮";
+    const wrap=document.querySelector(".loading-spinner-wrap");if(wrap){wrap.style.width=Number(siteSettings.loadingSpinnerSize||190)+"px";wrap.style.height=Number(siteSettings.loadingSpinnerSize||190)+"px";}
+    const spinner=document.querySelector(".loading-spinner");if(spinner){
+        spinner.style.borderWidth=Number(siteSettings.loadingThickness||7)+"px";
+        spinner.style.borderTopColor=siteSettings.loadingRingColor||"#00ff66";
+        spinner.style.borderRightColor=siteSettings.loadingRingColor||"#00ff66";
+        spinner.style.animationDuration=Number(siteSettings.loadingSpeed||1.05)+"s";
+    }
+    if(loadingLogo){
+        loadingLogo.style.width=Number(siteSettings.loadingLogoSize||105)+"px";
+        loadingLogo.style.height=Number(siteSettings.loadingLogoSize||105)+"px";
+        loadingLogo.style.display=siteSettings.loadingShowLogo===false?"none":"block";
+    }
+    const overlay=document.getElementById("game-loading");
+    if(overlay)overlay.style.background=siteSettings.loadingBgColor||"#000000";
+    const box=document.querySelector(".loading-box");
+    if(box)box.style.width=Number(siteSettings.loadingBoxWidth||340)+"px";
+}
+function loadLoadingSettingsToForm(){
+    const s=siteSettings||settingsDefaults();
+    const set=(id,val)=>{const e=document.getElementById(id);if(e)e.value=val;};
+    set("loading-title-input",s.loadingTitle||"جاري تحميل اللعبة");
+    set("loading-sub-input",s.loadingSub||"استنى ثواني بسيطة، اللعبة هتفتح معاك 🎮");
+    set("loading-spinner-size-input",Number(s.loadingSpinnerSize||190));
+    set("loading-logo-size-input",Number(s.loadingLogoSize||105));
+    set("loading-speed-input",Number(s.loadingSpeed||1.05));
+    set("loading-thickness-input",Number(s.loadingThickness||7));
+    set("loading-ring-color-input",s.loadingRingColor||"#00ff66");
+    set("loading-bg-color-input",s.loadingBgColor||"#000000");
+    set("loading-show-logo-input",String(s.loadingShowLogo!==false));
+    set("loading-box-width-input",Number(s.loadingBoxWidth||340));
+    const preview=document.getElementById("loading-logo-preview");if(preview)preview.src=s.loadingLogo||s.logo||"assets/matrix-logo-192.jpg";
+    updateLoadingFormLabels();
+    updateLoadingPreview();
+}
+async function saveLoadingSettings(){
+    if(!currentUser||!db){alert("سجل الدخول كأدمن أولاً.");return;}
+    try{
+        let loadingLogo=siteSettings.loadingLogo||siteSettings.logo||"";
+        const file=document.getElementById("loading-logo-input")?.files?.[0];
+        if(file)loadingLogo=await compressLogoForFirestore(file,900,.9);
+        if(loadingLogo&&loadingLogo.length>850000){alert("لوجو شاشة التحميل كبير جدًا بعد الضغط. اختَر صورة أصغر.");return;}
+        siteSettings={...settingsDefaults(),...siteSettings,
+            loadingTitle:document.getElementById("loading-title-input")?.value.trim()||"جاري تحميل اللعبة",
+            loadingSub:document.getElementById("loading-sub-input")?.value.trim()||"",
+            loadingSpinnerSize:Number(document.getElementById("loading-spinner-size-input")?.value||190),
+            loadingLogoSize:Number(document.getElementById("loading-logo-size-input")?.value||105),
+            loadingSpeed:Number(document.getElementById("loading-speed-input")?.value||1.05),
+            loadingThickness:Number(document.getElementById("loading-thickness-input")?.value||7),
+            loadingRingColor:document.getElementById("loading-ring-color-input")?.value||"#00ff66",
+            loadingBgColor:document.getElementById("loading-bg-color-input")?.value||"#000000",
+            loadingShowLogo:document.getElementById("loading-show-logo-input")?.value!=="false",
+            loadingBoxWidth:Number(document.getElementById("loading-box-width-input")?.value||340)
+        };
+        if(loadingLogo)siteSettings.loadingLogo=loadingLogo;
+        await db.collection("games").doc("site_settings").set(siteSettings,{merge:true});
+        applyLoadingSettings();
+        loadLoadingSettingsToForm();
+        const msg=document.getElementById("loading-message");if(msg)msg.textContent="تم حفظ شاشة التحميل ✅";
+    }catch(e){console.error(e);alert("تعذر حفظ شاشة التحميل: "+friendlyFirebaseError(e));}
+}
+function resetLoadingSettings(){
+    const d=settingsDefaults();
+    Object.assign(siteSettings,{
+        loadingTitle:d.loadingTitle,loadingSub:d.loadingSub,loadingSpinnerSize:d.loadingSpinnerSize,
+        loadingLogoSize:d.loadingLogoSize,loadingSpeed:d.loadingSpeed,loadingThickness:d.loadingThickness,
+        loadingRingColor:d.loadingRingColor,loadingBgColor:d.loadingBgColor,loadingShowLogo:d.loadingShowLogo,
+        loadingBoxWidth:d.loadingBoxWidth,loadingLogo:""
+    });
+    applyLoadingSettings();loadLoadingSettingsToForm();
 }
 function loadSiteSettingsToForm(){
     const s=siteSettings||settingsDefaults();
