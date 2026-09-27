@@ -1143,14 +1143,26 @@ async function restoreCurrentGameProgress(){
         if(!snap.exists)return false;
         const data=snap.data()||{};
         activeGameExplicitState=data.explicitState===undefined?null:data.explicitState;
-        applyStorageDiff(window.localStorage,data.localStorageDiff||{});
-        applyStorageDiff(window.sessionStorage,data.sessionStorageDiff||{});
+
+        // يدعم الحفظ الجديد الكامل، والنسخة السابقة التي كانت تعتمد على Diff.
+        if(data.localStorageSnapshot){
+            Object.entries(data.localStorageSnapshot).forEach(([key,value])=>{
+                if(shouldSaveStorageKey(key)) window.localStorage.setItem(key,value);
+            });
+        }else{
+            applyStorageDiff(window.localStorage,data.localStorageDiff||{});
+        }
+        if(data.sessionStorageSnapshot){
+            Object.entries(data.sessionStorageSnapshot).forEach(([key,value])=>{
+                if(shouldSaveStorageKey(key)) window.sessionStorage.setItem(key,value);
+            });
+        }else{
+            applyStorageDiff(window.sessionStorage,data.sessionStorageDiff||{});
+        }
         applySavedExplicitState();
         return true;
     }catch(e){
         console.warn("restoreCurrentGameProgress:",e);
-        // فشل الحفظ لا يمنع اللعبة ولا يعرض رسالة على الشاشة.
-        setGameSaveStatus("");
         return false;
     }
 }
@@ -1158,33 +1170,45 @@ function serializeSaveSignature(payload){
     try{return JSON.stringify(payload)}catch(e){return "";}
 }
 async function saveCurrentGameProgress(){
-    if(!activeGameName || !currentUser || !db)return;
+    if(!activeGameName || !currentUser || !db)return false;
     const btn=document.getElementById("game-save-btn");
     if(btn)btn.disabled=true;
     try{
-        const afterLocal=captureStorage(window.localStorage);
-        const afterSession=captureStorage(window.sessionStorage);
+        const localSnapshot=captureStorage(window.localStorage);
+        const sessionSnapshot=captureStorage(window.sessionStorage);
         const payload={
             gameName:activeGameName,
             explicitState:activeGameExplicitState===undefined?null:activeGameExplicitState,
-            localStorageDiff:storageDiff(activeGameLocalBaseline||{},afterLocal),
-            sessionStorageDiff:storageDiff(activeGameSessionBaseline||{},afterSession),
+            localStorageSnapshot:localSnapshot,
+            sessionStorageSnapshot:sessionSnapshot,
             savedAt:firebase.firestore.FieldValue.serverTimestamp()
         };
         applySavedExplicitState();
-        const compact=JSON.stringify(payload);
-        if(compact.length>800000){
-            setGameSaveStatus("");
-            return;
+
+        const compact=JSON.stringify({
+            gameName:payload.gameName,
+            explicitState:payload.explicitState,
+            localStorageSnapshot:payload.localStorageSnapshot,
+            sessionStorageSnapshot:payload.sessionStorageSnapshot
+        });
+        if(compact.length>850000){
+            console.warn("Game save too large:",activeGameName,compact.length);
+            return false;
         }
-        const signature=serializeSaveSignature({...payload,savedAt:null});
-        if(signature===activeGameLastSavedSignature)return;
-        await db.collection("users").doc(currentUser.uid).collection("gameSaves").doc(gameSaveDocId(activeGameName)).set(payload,{merge:true});
+
+        const signature=serializeSaveSignature(JSON.parse(compact));
+        if(signature===activeGameLastSavedSignature)return true;
+
+        await db.collection("users").doc(currentUser.uid)
+            .collection("gameSaves").doc(gameSaveDocId(activeGameName))
+            .set(payload,{merge:true});
+
         activeGameLastSavedSignature=signature;
-        setGameSaveStatus("");
+        console.info("Matrix game saved:",activeGameName);
+        return true;
     }catch(e){
         console.warn("saveCurrentGameProgress:",e);
-        setGameSaveStatus("");
+        return false;
     }finally{
         if(btn)btn.disabled=false;
     }
@@ -1192,7 +1216,9 @@ async function saveCurrentGameProgress(){
 function startGameAutosave(){
     stopGameAutosave();
     if(!currentUser)return;
-    activeGameSaveTimer=setInterval(()=>{saveCurrentGameProgress();},10000);
+    // أول حفظ سريع ثم حفظ مستمر كل 3 ثواني.
+    saveCurrentGameProgress();
+    activeGameSaveTimer=setInterval(()=>{saveCurrentGameProgress();},3000);
 }
 function stopGameAutosave(){
     if(activeGameSaveTimer){clearInterval(activeGameSaveTimer);activeGameSaveTimer=null;}
@@ -1204,7 +1230,12 @@ window.addEventListener("message",event=>{
     activeGameExplicitState=event.data.state===undefined?null:event.data.state;
     saveCurrentGameProgress();
 });
-window.addEventListener("beforeunload",()=>{saveCurrentGameProgress();});
+document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="hidden" && activeGameName) saveCurrentGameProgress();
+});
+window.addEventListener("pagehide",()=>{
+    if(activeGameName) saveCurrentGameProgress();
+});
 async function openGame(encodedName){
     const name=decodeURIComponent(encodedName);
     const game=catalog.find(g=>g.name===name);
