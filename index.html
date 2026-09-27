@@ -1568,7 +1568,11 @@ async function loginWithGoogle(){
             await auth.signInWithRedirect(provider);
             return;
         }
-        await auth.signInWithPopup(provider);
+        const result=await auth.signInWithPopup(provider);
+        if(result?.user){
+            closeAuthModal();
+            await loadUserProfile(result.user);
+        }
     }catch(e){
         console.error(e);
         if(e?.code==="auth/account-exists-with-different-credential" && e.credential){
@@ -1640,6 +1644,9 @@ function friendlyFirebaseError(e){
 ========================================================= */
 async function loadUserProfile(user){
     currentUser=user;
+    if(user){
+        closeAuthModal();
+    }
     if(!user){
         currentProfile=null;
         favoriteGames=new Set(getLocalFavorites());
@@ -2371,6 +2378,7 @@ if(firebaseReady){
         .then(result=>{
             if(result && result.user){
                 closeAuthModal();
+                loadUserProfile(result.user).catch(console.error);
             }
         })
         .catch(e=>{
