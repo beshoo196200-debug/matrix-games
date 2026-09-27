@@ -133,13 +133,13 @@ body{
     background:#060c06;padding:10px 25px;border-bottom:2px solid #00ff66;height:65px;
     transition:opacity .35s ease,transform .35s ease,visibility .35s ease;
 }
-#game-screen.game-playing .control-bar{
+#game-screen.is-fullscreen .control-bar{
     opacity:0;
     transform:translateY(-100%);
     visibility:hidden;
     pointer-events:none;
 }
-#game-screen.game-playing .game-save-status{
+#game-screen.is-fullscreen .game-save-status{
     opacity:0;
     transform:translateY(-8px);
     visibility:hidden;
@@ -1121,10 +1121,10 @@ function setGameSaveStatus(text){
     el.style.display="none";
 }
 function hideGameChrome(){
-    document.getElementById("game-screen")?.classList.add("game-playing");
+    document.getElementById("game-screen")?.classList.add("is-fullscreen");
 }
 function showGameChrome(){
-    document.getElementById("game-screen")?.classList.remove("game-playing");
+    document.getElementById("game-screen")?.classList.remove("is-fullscreen");
 }
 function gameSaveDocId(name){
     return encodeURIComponent(String(name||"")).replace(/%/g,"_").slice(0,150);
@@ -1226,16 +1226,12 @@ async function openGame(encodedName){
     showGameChrome();
     setGameSaveStatus("");
     showGameLoading();
-    window.clearTimeout(window.matrixGameChromeTimer);
-    window.matrixGameChromeTimer=window.setTimeout(hideGameChrome,900);
     document.getElementById("game-screen").style.display="block";
     document.body.style.overflow="hidden";
 
     iframe.onload=async()=>{
         hideGameLoading();
         startGameAutosave();
-        window.clearTimeout(window.matrixGameChromeTimer);
-        window.matrixGameChromeTimer=window.setTimeout(hideGameChrome,250);
 
         // للألعاب المحلية: بعد فتح اللعبة نستعيد الحفظ ثم نعيد تحميلها مرة واحدة
         // حتى يقرأ محرك اللعبة البيانات من localStorage بدون تعطيل تحميل اللعبة نفسه.
@@ -1254,8 +1250,6 @@ async function openGame(encodedName){
     iframe.onerror=()=>{
         hideGameLoading();
         setGameSaveStatus("");
-        window.clearTimeout(window.matrixGameChromeTimer);
-        window.matrixGameChromeTimer=window.setTimeout(hideGameChrome,300);
     };
 
     iframe.removeAttribute("srcdoc");
@@ -1277,7 +1271,7 @@ async function closeGame(){
     await saveCurrentGameProgress();
     stopGameAutosave();
     window.clearTimeout(window.matrixGameChromeTimer);
-    hideGameChrome();
+    showGameChrome();
     setGameSaveStatus("");
     restoreStorageBaseline();
     const iframe=document.getElementById("game-container");
@@ -1335,7 +1329,14 @@ async function goFull(){
 }
 
 document.addEventListener("fullscreenchange",()=>{
-    if(!document.fullscreenElement) unlockOrientation();
+    const screenEl=document.getElementById("game-screen");
+    if(document.fullscreenElement){
+        screenEl?.classList.add("is-fullscreen");
+    }else{
+        screenEl?.classList.remove("is-fullscreen");
+        showGameChrome();
+        unlockOrientation();
+    }
 });
 
 /* =========================================================
