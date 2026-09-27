@@ -739,6 +739,46 @@ let analytics = null;
 let storage = null;
 let analyticsReady = false;
 
+const LOCAL_ANALYTICS_KEY = "matrixGamesLocalAnalytics";
+function getLocalAnalytics(){
+    try{
+        const raw=localStorage.getItem(LOCAL_ANALYTICS_KEY);
+        const data=raw?JSON.parse(raw):{};
+        return {gameOpens:Number(data.gameOpens||0),searches:Number(data.searches||0),favorites:Number(data.favorites||0),logins:Number(data.logins||0),topGames:(data.topGames&&typeof data.topGames==="object")?data.topGames:{}};
+    }catch(e){return {gameOpens:0,searches:0,favorites:0,logins:0,topGames:{}};}
+}
+function saveLocalAnalytics(data){try{localStorage.setItem(LOCAL_ANALYTICS_KEY,JSON.stringify(data));}catch(e){}}
+function trackLocalAnalytics(type,name){
+    const data=getLocalAnalytics();
+    if(type==="game"){data.gameOpens++;if(name)data.topGames[name]=Number(data.topGames[name]||0)+1;}
+    else if(type==="search")data.searches++;
+    else if(type==="favorite")data.favorites++;
+    else if(type==="login")data.logins++;
+    saveLocalAnalytics(data);
+    refreshLocalAnalyticsPanel();
+}
+function refreshLocalAnalyticsPanel(){
+    const data=getLocalAnalytics();
+    const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=String(value);};
+    set("local-stat-game-opens",data.gameOpens);
+    set("local-stat-searches",data.searches);
+    set("local-stat-favorites",data.favorites);
+    set("local-stat-logins",data.logins);
+    const box=document.getElementById("local-top-games");
+    if(box){
+        const rows=Object.entries(data.topGames).sort((a,b)=>Number(b[1])-Number(a[1])).slice(0,10);
+        box.innerHTML=rows.length ? rows.map((x,i)=>'<div class="analytics-list-row"><span>'+(i+1)+'. '+safeText(prettyName(x[0]))+'</span><b>'+x[1]+'</b></div>').join("") : '<div class="analytics-list-row"><span>لم يتم تشغيل ألعاب على هذا الجهاز بعد.</span></div>';
+    }
+    const statusTitle=document.getElementById("analytics-status-title");
+    const statusText=document.getElementById("analytics-status-text");
+    if(statusTitle)statusTitle.textContent=analyticsReady?"Analytics يعمل ✅":"Analytics غير متاح حاليًا";
+    if(statusText)statusText.textContent=analyticsReady?"تم تفعيل تتبع Firebase Analytics.":"الموقع يعمل عادي، لكن قياس Analytics غير متاح.";
+}
+function trackAnalytics(eventName,params){
+    if(!analyticsReady||!analytics)return;
+    try{analytics.logEvent(eventName,params||{});}catch(e){console.warn("Analytics event:",e);}
+}
+
 try {
     if (!firebaseConfig.apiKey.startsWith("PUT_") &&
         firebaseConfig.projectId &&
