@@ -134,10 +134,10 @@ body{
     transition:opacity .35s ease,transform .35s ease,visibility .35s ease;
 }
 #game-screen.is-fullscreen .control-bar{
-    opacity:0;
-    transform:translateY(-100%);
-    visibility:hidden;
-    pointer-events:none;
+    display:none;
+}
+#game-screen.is-fullscreen .iframe-container{
+    height:100vh;
 }
 #game-screen.is-fullscreen .game-save-status{
     opacity:0;
