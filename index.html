@@ -130,7 +130,20 @@ body{
 }
 .control-bar{
     display:flex;justify-content:space-between;align-items:center;gap:10px;
-    background:#060c06;padding:10px 25px;border-bottom:2px solid #00ff66;height:65px
+    background:#060c06;padding:10px 25px;border-bottom:2px solid #00ff66;height:65px;
+    transition:opacity .35s ease,transform .35s ease,visibility .35s ease;
+}
+#game-screen.game-playing .control-bar{
+    opacity:0;
+    transform:translateY(-100%);
+    visibility:hidden;
+    pointer-events:none;
+}
+#game-screen.game-playing .game-save-status{
+    opacity:0;
+    transform:translateY(-8px);
+    visibility:hidden;
+    pointer-events:none;
 }
 .btn{padding:12px 25px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px}
 .game-controls-right{display:flex;align-items:center;gap:8px}
@@ -1106,6 +1119,12 @@ function setGameSaveStatus(text){
     el.textContent=text||"";
     el.style.display=text?"block":"none";
 }
+function hideGameChrome(){
+    document.getElementById("game-screen")?.classList.add("game-playing");
+}
+function showGameChrome(){
+    document.getElementById("game-screen")?.classList.remove("game-playing");
+}
 function gameSaveDocId(name){
     return encodeURIComponent(String(name||"")).replace(/%/g,"_").slice(0,150);
 }
@@ -1202,6 +1221,7 @@ async function openGame(encodedName){
     activeGameSessionBaseline=captureStorage(window.sessionStorage);
 
     document.getElementById("current-title").textContent=prettyName(name);
+    showGameChrome();
     showGameLoading();
     setGameSaveStatus(currentUser?"جاري تحميل الحفظ المرتبط بحسابك…":"سجّل الدخول لحفظ التقدم على الحساب.");
     document.getElementById("game-screen").style.display="block";
@@ -1210,6 +1230,8 @@ async function openGame(encodedName){
     iframe.onload=async()=>{
         hideGameLoading();
         startGameAutosave();
+        window.clearTimeout(window.matrixGameChromeTimer);
+        window.matrixGameChromeTimer=window.setTimeout(hideGameChrome,900);
         setGameSaveStatus(currentUser?"✅ الحفظ التلقائي شغال":"⚠️ الحفظ مربوط بالحساب بعد تسجيل الدخول");
 
         // للألعاب المحلية: بعد فتح اللعبة نستعيد الحفظ ثم نعيد تحميلها مرة واحدة
@@ -1228,7 +1250,9 @@ async function openGame(encodedName){
     };
     iframe.onerror=()=>{
         hideGameLoading();
-        setGameSaveStatus("❌ تعذر تحميل ملف اللعبة");
+        setGameSaveStatus("");
+        window.clearTimeout(window.matrixGameChromeTimer);
+        window.matrixGameChromeTimer=window.setTimeout(hideGameChrome,300);
     };
 
     iframe.removeAttribute("srcdoc");
@@ -1249,6 +1273,8 @@ async function openGame(encodedName){
 async function closeGame(){
     await saveCurrentGameProgress();
     stopGameAutosave();
+    window.clearTimeout(window.matrixGameChromeTimer);
+    showGameChrome();
     restoreStorageBaseline();
     const iframe=document.getElementById("game-container");
     iframe.src="";
