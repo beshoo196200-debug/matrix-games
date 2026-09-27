@@ -1117,18 +1117,20 @@ function applySavedExplicitState(){
     }catch(e){}
 }
 async function restoreCurrentGameProgress(){
-    if(!activeGameName || !currentUser || !db)return;
+    if(!activeGameName || !currentUser || !db)return false;
     try{
         const snap=await db.collection("users").doc(currentUser.uid).collection("gameSaves").doc(gameSaveDocId(activeGameName)).get();
-        if(!snap.exists)return;
+        if(!snap.exists)return false;
         const data=snap.data()||{};
         activeGameExplicitState=data.explicitState===undefined?null:data.explicitState;
         applyStorageDiff(window.localStorage,data.localStorageDiff||{});
         applyStorageDiff(window.sessionStorage,data.sessionStorageDiff||{});
         applySavedExplicitState();
+        return true;
     }catch(e){
         console.warn("restoreCurrentGameProgress:",e);
         setGameSaveStatus("⚠️ الحفظ السحابي غير متاح حاليًا");
+        return false;
     }
 }
 function serializeSaveSignature(payload){
@@ -1186,8 +1188,10 @@ async function openGame(encodedName){
     const name=decodeURIComponent(encodedName);
     const game=catalog.find(g=>g.name===name);
     const iframe=document.getElementById("game-container");
+    const isCustom=!!game?.htmlCode;
 
     await saveCurrentGameProgress();
+    stopGameAutosave();
     restoreStorageBaseline();
 
     activeGameName=name;
@@ -1203,18 +1207,38 @@ async function openGame(encodedName){
     document.getElementById("game-screen").style.display="block";
     document.body.style.overflow="hidden";
 
-    await restoreCurrentGameProgress();
-
-    iframe.onload=()=>{
+    iframe.onload=async()=>{
         hideGameLoading();
         startGameAutosave();
         setGameSaveStatus(currentUser?"✅ الحفظ التلقائي شغال":"⚠️ الحفظ مربوط بالحساب بعد تسجيل الدخول");
+
+        // للألعاب المحلية: بعد فتح اللعبة نستعيد الحفظ ثم نعيد تحميلها مرة واحدة
+        // حتى يقرأ محرك اللعبة البيانات من localStorage بدون تعطيل تحميل اللعبة نفسه.
+        if(!isCustom && currentUser && !iframe.dataset.matrixRestoreDone){
+            iframe.dataset.matrixRestoreDone="1";
+            try{
+                const restored=await restoreCurrentGameProgress();
+                if(restored){
+                    iframe.removeAttribute("srcdoc");
+                    iframe.src=gameUrl(name);
+                    return;
+                }
+            }catch(e){console.warn("post-load restore:",e);}
+        }
     };
-    iframe.removeAttribute("src");
+    iframe.onerror=()=>{
+        hideGameLoading();
+        setGameSaveStatus("❌ تعذر تحميل ملف اللعبة");
+    };
+
     iframe.removeAttribute("srcdoc");
-    if(game?.htmlCode){
+    iframe.removeAttribute("src");
+    delete iframe.dataset.matrixRestoreDone;
+
+    if(isCustom){
         iframe.srcdoc=buildCustomGameDocument(game);
     }else{
+        // لا تستخدم srcdoc إطلاقًا مع الألعاب المحلية.
         iframe.src=gameUrl(name);
     }
 
