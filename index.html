@@ -1124,6 +1124,8 @@ const displayNames = {
 };
 
 let catalog = [];
+let gameImageObserver = null;
+const remoteGamePreviewPromises = new Map();
 let currentUser = null;
 let currentProfile = null;
 let favoriteGames = new Set();
@@ -1186,10 +1188,54 @@ function prettyName(name){
 function gameUrl(name){
     return "offline/" + encodeURIComponent(name) + ".html";
 }
+const GAME_PLACEHOLDER_IMAGE = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#061406"/><stop offset="100%" stop-color="#010301"/></linearGradient></defs><rect width="640" height="360" rx="28" fill="url(#g)"/><rect x="14" y="14" width="612" height="332" rx="24" fill="none" stroke="#00ff66" stroke-width="3" opacity=".7"/><text x="320" y="158" text-anchor="middle" fill="#00ff66" font-size="34" font-family="Arial,sans-serif" font-weight="900">Matrix Games: The World</text><text x="320" y="205" text-anchor="middle" fill="#9bb39b" font-size="18" font-family="Arial,sans-serif">Loading poster…</text></svg>');
+
 function imageUrl(name){
     const item = catalog.find(x=>x.name===name);
     if(item && item.image) return item.image;
-    return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340"><rect width="100%" height="100%" fill="#060c06"/><rect x="8" y="8" width="584" height="324" rx="24" fill="none" stroke="#00ff66" stroke-width="4"/><text x="300" y="155" text-anchor="middle" fill="#00ff66" font-size="34" font-family="Arial,sans-serif" font-weight="bold">Matrix Games: The World</text><text x="300" y="205" text-anchor="middle" fill="#9bb39b" font-size="20" font-family="Arial,sans-serif">${safeText(prettyName(name))}</text></svg>`);
+    return GAME_PLACEHOLDER_IMAGE;
+}
+
+async function loadRemoteGamePreview(name){
+    if(!db || !name)return null;
+    if(remoteGamePreviewPromises.has(name))return remoteGamePreviewPromises.get(name);
+    const promise=db.collection("games").doc(name).get().then(snap=>{
+        if(!snap.exists)return null;
+        const data=snap.data()||{};
+        const idx=catalog.findIndex(x=>x.name===name);
+        if(idx>=0)catalog[idx]={...catalog[idx],...data,id:snap.id};
+        document.querySelectorAll('[data-game-preview="'+encodeURIComponent(name)+'"]').forEach(img=>{
+            if(data.image)img.src=data.image;
+            img.dataset.loaded="1";
+            img.removeAttribute("data-game-pending");
+        });
+        return data;
+    }).catch(e=>{
+        console.warn("Lazy game preview:",name,e);
+        document.querySelectorAll('[data-game-preview="'+encodeURIComponent(name)+'"]').forEach(img=>{
+            img.dataset.loaded="1";
+            img.removeAttribute("data-game-pending");
+        });
+        return null;
+    });
+    remoteGamePreviewPromises.set(name,promise);
+    return promise;
+}
+
+function setupLazyGameImages(){
+    if(gameImageObserver)gameImageObserver.disconnect();
+    const imgs=[...document.querySelectorAll(".game-thumb[data-game-preview]")];
+    if(!imgs.length || !db)return;
+    gameImageObserver=new IntersectionObserver(entries=>{
+        entries.forEach(entry=>{
+            if(!entry.isIntersecting)return;
+            const img=entry.target;
+            gameImageObserver.unobserve(img);
+            if(img.dataset.loaded==="1")return;
+            loadRemoteGamePreview(decodeURIComponent(img.dataset.gamePreview||""));
+        });
+    },{rootMargin:"700px 0px"});
+    imgs.forEach(img=>gameImageObserver.observe(img));
 }
 
 /* =========================================================
@@ -1211,7 +1257,7 @@ function gameCardHtml(game){
     if(favoriteGames.has(game.name))badges.push("❤️ مفضلة");
     return `<div class="game-card" data-game="${encodeURIComponent(game.name)}" onclick="openGame(decodeURIComponent(this.dataset.game))">
         <div class="game-badges">${badges.filter(b=>b!=="❤️ مفضلة").map(b=>`<span class="game-badge">${b}</span>`).join("")}</div>
-        <img class="game-thumb" src="${img}" alt="${title}" onerror="this.onerror=null;this.src='https://via.placeholder.com/400x250/060c06/00ff66?text=Matrix+Games'">
+        <img class="game-thumb" loading="lazy" decoding="async" data-game-preview="${encodeURIComponent(game.name)}" data-game-pending="${game.image?"false":"true"}" src="${img}" alt="${title}" onerror="this.onerror=null;this.src=GAME_PLACEHOLDER_IMAGE">
         <div class="game-title-row">
             <button class="favorite-btn ${favoriteGames.has(game.name)?"active":""}" title="المفضلة" data-game="${encodeURIComponent(game.name)}" onclick="toggleFavorite(this.dataset.game,event)">★</button>
             <div class="game-title">${title}</div>
@@ -1224,6 +1270,7 @@ function renderGames(list=catalog){
     const grid=document.getElementById("main-grid");
     grid.innerHTML=visible.length?visible.map(game=>gameCardHtml(game)).join(""):'<div class="no-games">لا توجد ألعاب مطابقة 🔎</div>';
     document.getElementById("game-counter").textContent=`عدد الألعاب المعروضة: ${visible.length} | إجمالي الكتالوج: ${catalog.filter(g=>g.enabled!==false).length}`;
+    setupLazyGameImages();
 }
 function renderCategoryBar(){
     const bar=document.getElementById("category-bar");if(!bar)return;
@@ -1500,23 +1547,10 @@ async function openGame(encodedName){
     document.getElementById("game-screen").style.display="block";
     document.body.style.overflow="hidden";
 
-    iframe.onload=async()=>{
+    iframe.onload=()=>{
         hideGameLoading();
         startGameAutosave();
-
-        // للألعاب المحلية: بعد فتح اللعبة نستعيد الحفظ ثم نعيد تحميلها مرة واحدة
-        // حتى يقرأ محرك اللعبة البيانات من localStorage بدون تعطيل تحميل اللعبة نفسه.
-        if(!isCustom && currentUser && !iframe.dataset.matrixRestoreDone){
-            iframe.dataset.matrixRestoreDone="1";
-            try{
-                const restored=await restoreCurrentGameProgress();
-                if(restored){
-                    iframe.removeAttribute("srcdoc");
-                    iframe.src=gameUrl(name);
-                    return;
-                }
-            }catch(e){console.warn("post-load restore:",e);}
-        }
+        // لا نعيد تحميل اللعبة مرة ثانية بعد فتحها؛ إعادة التحميل كانت تجعل الألعاب البطيئة تُحمّل مرتين للمستخدم المسجّل.
     };
     iframe.onerror=()=>{
         hideGameLoading();
@@ -2482,28 +2516,34 @@ async function loadAdminGames(){
     }
 }
 
+async function loadRemoteCustomGamesInBackground(){
+    if(!db)return;
+    try{
+        const snap=await db.collection("games").where("custom","==",true).get();
+        let changed=false;
+        snap.forEach(doc=>{
+            const g=doc.data()||{};
+            if(!g.name)return;
+            const index=catalog.findIndex(x=>x.name===g.name);
+            if(index>=0)catalog[index]={...catalog[index],...g,id:doc.id};
+            else{catalog.push({id:doc.id,name:g.name,image:g.image||"",source:"firestore",custom:true,...g});changed=true;}
+        });
+        if(changed){
+            renderCategoryBar();
+            renderHomeSections();
+            renderGames();
+        }
+    }catch(e){console.warn("Background custom games:",e)}
+}
+
 async function reloadGames(){
     buildBaseCatalog();
-    if(db){
-        try{
-            const snap=await db.collection("games").get();
-            snap.forEach(doc=>{
-                const g=doc.data();
-                if(!g.name)return;
-                const index=catalog.findIndex(x=>x.name===g.name);
-                if(index>=0){
-                    catalog[index]={...catalog[index],...g,id:doc.id};
-                }else{
-                    catalog.push({id:doc.id,name:g.name,image:g.image||"",source:"firestore",custom:!!g,...g});
-                }
-            });
-        }catch(e){console.warn("Firestore games:",e)}
-    }
     await loadSiteSettings();
     renderCategoryBar();
     renderHomeSections();
     renderGames();
     loadAdminDashboard();
+    setTimeout(()=>loadRemoteCustomGamesInBackground(),1200);
 }
 
 /* =========================================================
