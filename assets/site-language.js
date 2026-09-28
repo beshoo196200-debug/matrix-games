@@ -6,7 +6,7 @@ const C={
  ar:{
   search:"🔍 ابحث عن لعبة أو اسم...",admin:"لوحة الأدمن ⚙️",login:"تسجيل الدخول 🎮",logout:"خروج",
   hero:"Matrix Games: The World — ألعاب مجانية مباشرة من المتصفح.",games:"🎮 كل الألعاب",
-  back:"◄ خروج ورجوع",save:"💾 حفظ التقدم",full:"ملء الشاشة ⛶",
+  back:"← رجوع",save:"💾 حفظ التقدم",full:"ملء الشاشة ⛶",related:"ألعاب مشابهة",gameNow:"اللعبة الآن",details:"تفاصيل اللعبة",favorite:"المفضلة",
   loginTitle:"تسجيل دخول عالم Matrix Games: The World",loginHint:"بعد تسجيل الدخول، بعض ميزات الموقع يمكن ربطها بحسابك.",
   register:"إنشاء حساب لاعب جديد",switchIn:"تمتلك حسابًا بالفعل؟ تسجيل دخول",switchOut:"لا تملك حسابًا؟ إنشاء حساب لاعب جديد",or:"أو",
   about:"عن Matrix Games",docs:"التوثيق والمساعدة",legal:"الخصوصية والاستخدام",community:"الموقع والخدمات",
@@ -22,7 +22,7 @@ const C={
  en:{
   search:"🔍 Search for a game or title...",admin:"Admin Panel ⚙️",login:"Sign in 🎮",logout:"Log out",
   hero:"Matrix Games: The World — free games, played directly in your browser.",games:"🎮 All Games",
-  back:"◄ Back",save:"💾 Save Progress",full:"Fullscreen ⛶",
+  back:"← Back",save:"💾 Save Progress",full:"Fullscreen ⛶",related:"Similar Games",gameNow:"Now Playing",details:"Game Details",favorite:"Favorites",
   loginTitle:"Sign in to Matrix Games: The World",loginHint:"Signing in is optional for some site features.",
   register:"Create a player account",switchIn:"Already have an account? Sign in",switchOut:"New here? Create a player account",or:"OR",
   about:"About Matrix Games",docs:"Documentation & Help",legal:"Privacy & Terms",community:"Site & Services",
@@ -73,8 +73,12 @@ function apply(next){
  txt("#search-input",c.search);const si=document.getElementById("search-input");if(si)si.placeholder=c.search;
  txt("#admin-panel-btn",c.admin);txt("#auth-btn-trigger",c.login);txt("#logout-btn",c.logout);
  txt("#hero-title","Matrix Games: The World");txt("#hero-subtitle",c.hero);txt("#all-games-title",c.games);
- const back=document.querySelector("#game-screen .back-btn");if(back)back.textContent=c.back;
+ const back=document.querySelector("#game-screen .game-back-btn");if(back)back.textContent=c.back;
  const sv=document.getElementById("game-save-btn");if(sv)sv.textContent=c.save;
+ const pl=document.getElementById("game-player-label");if(pl)pl.textContent=c.gameNow;
+ const rt=document.getElementById("related-games-title");if(rt)rt.textContent=c.related;
+ const di=document.querySelector(".game-info-label span");if(di)di.textContent=c.details;
+ const fav=document.getElementById("game-favorite-page-btn");if(fav){const active=fav.classList.contains("active");fav.textContent=active?"★ "+c.favorite:"☆ "+c.favorite;}
  const fu=document.querySelector("#game-screen .full-btn");if(fu)fu.textContent=c.full;
  const lh=document.querySelector("#login-panel h3");if(lh)lh.textContent=c.loginTitle;
  const li=document.querySelector("#login-panel > div");if(li)li.textContent=c.loginHint;
