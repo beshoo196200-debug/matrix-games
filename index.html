@@ -347,8 +347,9 @@ iframe{width:100%;height:100%;border:none}
 <div class="top-header">
     <div class="logo-title"><img class="site-logo" src="assets/matrix-logo-192.jpg" alt="Matrix Games: The World"><span id="header-site-title">Matrix Games: The World</span></div>
     <div class="header-actions">
-        <input type="text" id="search-input" class="search-box"
-               placeholder="🔍 ابحث عن Matrix Games: The World..." oninput="filterGames()">
+        <input type="search" id="search-input" name="game-search" class="search-box"
+               placeholder="🔍 ابحث عن لعبة..." autocomplete="off" autocapitalize="none"
+               spellcheck="false" inputmode="search" oninput="filterGames()">
         <button id="admin-panel-btn" class="admin-trigger-btn"
                 onclick="toggleAdminPanelVisibility()">لوحة الأدمن ⚙️</button>
         <button id="auth-btn-trigger" class="auth-trigger-btn"
@@ -847,8 +848,10 @@ iframe{width:100%;height:100%;border:none}
         <div id="login-panel">
             <h3 style="color:#00ff66;margin-top:0">تسجيل دخول عالم Matrix Games: The World</h3>
             <div style="color:#9bb39b;font-size:12px;line-height:1.6;margin-bottom:8px">بعد تسجيل الدخول، الموقع يحاول حفظ تقدم الألعاب المرتبط بحسابك تلقائيًا.</div>
-            <input type="text" id="login-user" class="auth-input" placeholder="البريد الإلكتروني أو اسم المستخدم">
-            <input type="password" id="login-pass" class="auth-input" placeholder="كلمة المرور السرية">
+            <input type="text" id="login-user" name="username" class="auth-input" placeholder="البريد الإلكتروني أو اسم المستخدم"
+                   autocomplete="username" autocapitalize="none" spellcheck="false">
+            <input type="password" id="login-pass" name="password" class="auth-input" placeholder="كلمة المرور السرية"
+                   autocomplete="current-password">
             <button class="auth-btn" onclick="loginPlayer()">دخول السيرفر 🎮</button>
             <button class="secondary-btn auth-btn" style="margin-top:8px" onclick="sendPasswordReset()">🔑 نسيت كلمة المرور؟</button>
             <div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:#6f8b6f;font-size:12px">
@@ -862,8 +865,10 @@ iframe{width:100%;height:100%;border:none}
 
         <div id="register-panel" style="display:none">
             <h3 style="color:#00ff66;margin-top:0">إنشاء حساب لاعب جديد</h3>
-            <input type="text" id="reg-user" class="auth-input" placeholder="اختر اسم مستخدم جديد">
-            <input type="password" id="reg-pass" class="auth-input" placeholder="اختر كلمة مرور قوية">
+            <input type="text" id="reg-user" name="new-username" class="auth-input" placeholder="اختر اسم مستخدم جديد"
+                   autocomplete="username" autocapitalize="none" spellcheck="false">
+            <input type="password" id="reg-pass" name="new-password" class="auth-input" placeholder="اختر كلمة مرور قوية"
+                   autocomplete="new-password">
             <button class="auth-btn" onclick="registerPlayer()">تأكيد الحساب والإنشاء 📝</button>
             <span class="toggle-link" onclick="togglePanel(true)">تمتلك حساباً بالفعل؟ تسجيل دخول للمنصة</span>
         </div>
