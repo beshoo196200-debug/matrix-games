@@ -412,8 +412,8 @@ iframe{width:100%;height:100%;border:none}
                     </div>
                     <div class="admin-panel-card">
                         <h3>🖼️ إنشاء صور الألعاب الناقصة</h3>
-                        <p class="admin-help">الزر ده بيصمم صور Poster تلقائيًا للألعاب التي ليس لها صورة، ويحفظها في Firestore. الصور الموجودة بالفعل لن تتأثر.</p>
-                        <button class="auth-btn" onclick="generateMissingGameImages()">⚡ إنشاء كل الصور الناقصة</button>
+                        <p class="admin-help">الصور الافتراضية للألعاب يتم توليدها تلقائيًا داخل المتصفح بدون تحميل 300 صورة من Firestore. استخدم رفع صورة مخصصة فقط عندما تريد تغيير Poster لعبة معينة.</p>
+                        <button class="auth-btn" onclick="generateMissingGameImages()">⚡ تحديث Posters الافتراضية</button>
                         <div id="image-generation-status" class="admin-message"></div>
                     </div>
                     <div class="admin-panel-card">
@@ -2125,7 +2125,6 @@ async function checkAdmin(uid){
     if(!isAdmin) document.getElementById("admin-panel").style.display="none";
     if(isAdmin){
         loadAdminGames();
-        setTimeout(()=>generateMissingGameImages(),700);
     }
 }
 
@@ -2673,6 +2672,7 @@ async function uploadSelectedGameImage(){
             name,
             image,
             source:"local",
+            imageType:"custom",
             enabled:true,
             updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
             updatedBy:currentUser.uid
@@ -2736,7 +2736,8 @@ async function reloadGames(){
     renderHomeSections();
     renderGames();
     loadAdminDashboard();
-    setTimeout(()=>loadRemoteCustomGamesInBackground(),1200);
+    setTimeout(()=>loadRemoteCustomGamesInBackground(),500);
+    setTimeout(()=>loadRemoteCustomGameImagesInBackground(),700);
 }
 
 /* =========================================================
