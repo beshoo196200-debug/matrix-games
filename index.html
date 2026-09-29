@@ -1344,49 +1344,37 @@ const GAME_PLACEHOLDER_IMAGE = "data:image/svg+xml;charset=UTF-8," + encodeURICo
 function imageUrl(name){
     const item = catalog.find(x=>x.name===name);
     if(item && item.image) return item.image;
-    return GAME_PLACEHOLDER_IMAGE;
+    // البوستر الافتراضي يتولد محليًا، فلا توجد قراءة Firestore لكل لعبة.
+    return generatedGamePoster(name,getGameCategory(item||{name}));
 }
 
-async function loadRemoteGamePreview(name){
-    if(!db || !name)return null;
-    if(remoteGamePreviewPromises.has(name))return remoteGamePreviewPromises.get(name);
-    const promise=db.collection("games").doc(name).get().then(snap=>{
-        if(!snap.exists)return null;
-        const data=snap.data()||{};
-        const idx=catalog.findIndex(x=>x.name===name);
-        if(idx>=0)catalog[idx]={...catalog[idx],...data,id:snap.id};
-        document.querySelectorAll('[data-game-preview="'+encodeURIComponent(name)+'"]').forEach(img=>{
-            if(data.image)img.src=data.image;
-            img.dataset.loaded="1";
-            img.removeAttribute("data-game-pending");
+async function loadRemoteCustomGameImagesInBackground(){
+    if(!db)return;
+    try{
+        // الصور المخصصة فقط محفوظة بـ source=local.
+        // الصور المولدة القديمة بـ source=generated لا نحتاج لتحميلها.
+        const snap=await db.collection("games").where("source","==","local").get();
+        let changed=false;
+        snap.forEach(doc=>{
+            const data=doc.data()||{};
+            if(!data.name || !data.image)return;
+            const idx=catalog.findIndex(x=>x.name===data.name);
+            if(idx>=0){
+                catalog[idx]={...catalog[idx],...data,id:doc.id};
+                changed=true;
+            }
         });
-        return data;
-    }).catch(e=>{
-        console.warn("Lazy game preview:",name,e);
-        document.querySelectorAll('[data-game-preview="'+encodeURIComponent(name)+'"]').forEach(img=>{
-            img.dataset.loaded="1";
-            img.removeAttribute("data-game-pending");
-        });
-        return null;
-    });
-    remoteGamePreviewPromises.set(name,promise);
-    return promise;
+        if(changed){
+            renderHomeSections();
+            renderGames();
+        }
+    }catch(e){
+        console.warn("Background custom game images:",e);
+    }
 }
 
 function setupLazyGameImages(){
-    if(gameImageObserver)gameImageObserver.disconnect();
-    const imgs=[...document.querySelectorAll(".game-thumb[data-game-preview]")];
-    if(!imgs.length || !db)return;
-    gameImageObserver=new IntersectionObserver(entries=>{
-        entries.forEach(entry=>{
-            if(!entry.isIntersecting)return;
-            const img=entry.target;
-            gameImageObserver.unobserve(img);
-            if(img.dataset.loaded==="1")return;
-            loadRemoteGamePreview(decodeURIComponent(img.dataset.gamePreview||""));
-        });
-    },{rootMargin:"700px 0px"});
-    imgs.forEach(img=>gameImageObserver.observe(img));
+    // متوافق مع الاستدعاءات القديمة؛ الصور الافتراضية أصبحت محلية.
 }
 
 /* =========================================================
@@ -1408,7 +1396,7 @@ function gameCardHtml(game){
     if(favoriteGames.has(game.name))badges.push("❤️ مفضلة");
     return `<div class="game-card" data-game="${encodeURIComponent(game.name)}" onclick="openGame(decodeURIComponent(this.dataset.game))">
         <div class="game-badges">${badges.filter(b=>b!=="❤️ مفضلة").map(b=>`<span class="game-badge">${b}</span>`).join("")}</div>
-        <img class="game-thumb" loading="lazy" decoding="async" data-game-preview="${encodeURIComponent(game.name)}" data-game-pending="${game.image?"false":"true"}" src="${img}" alt="${title}" onerror="this.onerror=null;this.src=GAME_PLACEHOLDER_IMAGE">
+        <img class="game-thumb" loading="lazy" decoding="async" src="${img}" alt="${title}" onerror="this.onerror=null;this.src=GAME_PLACEHOLDER_IMAGE">
         <div class="game-title-row">
             <button class="favorite-btn ${favoriteGames.has(game.name)?"active":""}" title="المفضلة" data-game="${encodeURIComponent(game.name)}" onclick="toggleFavorite(this.dataset.game,event)">★</button>
             <div class="game-title">${title}</div>
@@ -2274,48 +2262,12 @@ function generatedGamePoster(name,category){
 }
 async function generateMissingGameImages(){
     const status=document.getElementById("image-generation-status");
-    if(!currentUser||!db){if(status)status.textContent="سجل الدخول بحساب الأدمن أولاً.";return;}
-    if(status)status.textContent="جاري فحص صور الألعاب الحالية...";
-    try{
-        const snap=await db.collection("games").get();
-        const existing={};
-        snap.forEach(d=>{const g=d.data(); if(g.name)existing[g.name]={id:d.id,...g};});
-        const missing=gameFiles.filter(name=>!existing[name]?.image);
-        if(!missing.length){
-            if(status)status.textContent="كل الألعاب لها صور بالفعل ✅";
-            loadAdminDashboard();
-            return;
-        }
-        const total=missing.length;
-        let done=0;
-        const batchSize=450;
-        for(let i=0;i<missing.length;i+=batchSize){
-            const batch=db.batch();
-            const chunk=missing.slice(i,i+batchSize);
-            chunk.forEach(name=>{
-                const category=getGameCategory(existing[name]||{name});
-                const ref=db.collection("games").doc(name);
-                batch.set(ref,{
-                    name,
-                    image:generatedGamePoster(name,category),
-                    imageType:"generated",
-                    source:"generated",
-                    enabled:existing[name]?.enabled!==false,
-                    updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-                    updatedBy:currentUser.uid
-                },{merge:true});
-            });
-            await batch.commit();
-            done+=chunk.length;
-            if(status)status.textContent="تم إنشاء وحفظ "+done+" من "+total+" صورة ✅";
-        }
-        await reloadGames();
-        await loadAdminGames();
-        if(status)status.textContent="خلصنا ✅ تم إنشاء "+total+" صورة جديدة، والصور القديمة لم يتم تغييرها.";
-    }catch(e){
-        console.error("generateMissingGameImages",e);
-        if(status)status.textContent="حصل خطأ أثناء إنشاء الصور: "+friendlyFirebaseError(e);
-    }
+    // لم نعد نحفظ الـ300 بوستر الافتراضي في Firestore.
+    // يتم توليدها محليًا داخل المتصفح من اسم اللعبة والتصنيف.
+    if(status)status.textContent="تم تحسين النظام: صور الألعاب الافتراضية تُولَّد محليًا بدون Firestore ✅";
+    loadAdminDashboard();
+    renderHomeSections();
+    renderGames();
 }
 function loadAdminDashboard(extraRows=[]){
     const total=document.getElementById("stat-total-games");
